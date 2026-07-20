@@ -1,0 +1,158 @@
+<div class="db-page">
+
+  <!-- ============ Header (titre + filtre projet à droite) ============ -->
+  <div class="db-header">
+    <div class="db-head-left">
+      <h1 class="db-title">Dashboard ST2I</h1>
+      <p class="db-sub">Vue globale du portefeuille de projets</p>
+    </div>
+
+    <div class="db-filter">
+      <label class="filter-lbl">Projet</label>
+      <div class="select-wrap">
+        <select class="filter-select" [(ngModel)]="selectedProjet" (change)="onProjetChange()">
+          <option value="all">Tous les projets</option>
+          <option *ngFor="let p of projets" [value]="p.id">{{ p.titre }}</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ KPI Cards ============ -->
+  <div class="kpi-grid">
+
+    <div class="kpi-card kpi-c1">
+      <div class="kpi-icon">
+        <svg viewBox="0 0 24 24" class="ic-kpi"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9h0M9 13h0M9 17h0"/></svg>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-lbl">Projets actifs</p>
+        <p class="kpi-val">{{ projetsActifs }} / {{ totalProjets }}</p>
+        <p class="kpi-trend">{{ totalProjets }} projets au total</p>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-c2">
+      <div class="kpi-icon">
+        <svg viewBox="0 0 24 24" class="ic-kpi"><path d="M3 7h18v12H3zM3 7l2-3h14l2 3M16 13h2"/></svg>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-lbl">Budget total</p>
+        <p class="kpi-val">{{ num(totalBudget) }} <span class="kpi-unit">DT</span></p>
+        <p class="kpi-trend">Budget initial cumulé</p>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-c3">
+      <div class="kpi-icon">
+        <svg viewBox="0 0 24 24" class="ic-kpi"><path d="M3 3v18h18M7 14l4-4 3 3 5-6"/></svg>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-lbl">Coût réel total</p>
+        <p class="kpi-val">{{ num(totalCoutReel) }} <span class="kpi-unit">DT</span></p>
+        <p class="kpi-trend">Tous projets confondus</p>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-c4">
+      <div class="kpi-icon">
+        <svg viewBox="0 0 24 24" class="ic-kpi"><path d="M12 3 2 20h20L12 3zM12 10v4M12 17h0"/></svg>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-lbl">Risques critiques</p>
+        <p class="kpi-val">{{ risquesCritiques }}</p>
+        <p class="kpi-trend">Criticité &#8805; 15</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ Ligne 1 : Statut (1/3) + Evolution EV (2/3) ============ -->
+  <div class="charts-row-13">
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Répartition par statut</span>
+        <span class="chip chip-blue">Pie</span>
+      </div>
+      <div class="chart-body" style="height:300px">
+        <iframe [src]="iframes['projetsParStatut']" class="mb-iframe" frameborder="0" allowtransparency="true"></iframe>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Évolution Earned Value &amp; Delivery %</span>
+        <span class="chip chip-blue">Line</span>
+      </div>
+      <div class="chart-body" style="height:300px">
+        <iframe [src]="iframes['evDelivery']" class="mb-iframe" frameborder="0" allowtransparency="true"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Ligne 2 : CA Production vs Cout (pleine largeur) ============ -->
+  <div class="chart-card">
+    <div class="chart-head">
+      <span class="chart-title">Évolution CA Production vs Coût</span>
+      <span class="chip chip-blue">Line</span>
+    </div>
+    <div class="chart-body" style="height:340px">
+      <iframe [src]="iframes['caCout']" class="mb-iframe" frameborder="0" allowtransparency="true"></iframe>
+    </div>
+  </div>
+
+  <!-- ============ Ligne 3 : Facturation vs CA vs Couts + Evolution Couts ============ -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Facturation vs CA vs Coûts</span>
+        <span class="chip chip-amber">Line</span>
+      </div>
+      <div class="chart-body" style="height:300px">
+        <iframe [src]="iframes['factCaCout']" class="mb-iframe" frameborder="0" allowtransparency="true"></iframe>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Évolution Coûts</span>
+        <span class="chip chip-green">Combo</span>
+      </div>
+      <div class="chart-body" style="height:300px">
+        <iframe [src]="iframes['coutsEvol']" class="mb-iframe" frameborder="0" allowtransparency="true"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Ligne 4 : Charge HJ + Marge nette ============ -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Évolution Charge HJ</span>
+        <span class="chip chip-blue">Line</span>
+      </div>
+      <div class="chart-body" style="height:300px">
+        <iframe [src]="iframes['chargeHj']" class="mb-iframe" frameborder="0" allowtransparency="true"></iframe>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Marge nette du projet</span>
+        <span class="chip chip-amber">Combo</span>
+      </div>
+      <div class="chart-body" style="height:300px">
+        <iframe [src]="iframes['marge']" class="mb-iframe" frameborder="0" allowtransparency="true"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Ligne 5 : Facturation par echeance (pleine largeur) ============ -->
+  <div class="chart-card">
+    <div class="chart-head">
+      <span class="chart-title">Facturation par échéance</span>
+      <span class="chip chip-green">Combo</span>
+    </div>
+    <div class="chart-body" style="height:320px">
+      <iframe [src]="iframes['factEcheance']" class="mb-iframe" frameborder="0" allowtransparency="true"></iframe>
+    </div>
+  </div>
+
+</div>

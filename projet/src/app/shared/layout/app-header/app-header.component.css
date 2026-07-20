@@ -1,0 +1,17 @@
+.st-header {
+  background: var(--st-header-bg);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--st-border);
+  box-shadow: 0 1px 20px var(--st-shadow);
+}
+.st-toggle-btn {
+  border: 1px solid var(--st-border);
+  background: var(--st-surface-2);
+}
+.st-toggle-btn:hover {
+  background: var(--st-surface-3) !important;
+  border-color: var(--st-border) !important;
+  transform: scale(1.05);
+}
+.st-breadcrumb-sep    { font-size: 13px; color: var(--st-text-faint); }
+.st-breadcrumb-active { font-size: 13px; font-weight: 600; color: var(--st-text-1); }

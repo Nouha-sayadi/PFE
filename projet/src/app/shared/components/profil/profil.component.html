@@ -1,0 +1,375 @@
+<div class="profil-page">
+
+  <app-page-header
+    title="Gestion des profils"
+    [subtitle]="profils.length + ' profil(s) enregistré(s)'">
+    <svg icon width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+    <button action class="btn btn-primary" (click)="toggleForm()">
+      {{ showForm ? 'Annuler' : '+ Nouveau profil' }}
+    </button>
+  </app-page-header>
+
+  <!-- Formulaire création -->
+  <div class="create-form" *ngIf="showForm">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nom du profil</label>
+        <input type="text" [(ngModel)]="nom" placeholder="ex : Administrateur" />
+      </div>
+      <div class="form-group">
+        <label>Code</label>
+        <input type="text" [(ngModel)]="code" placeholder="ex : ADMIN" style="text-transform:uppercase" />
+      </div>
+    </div>
+
+    <div class="perm-assign-section">
+      <div class="perm-assign-header">
+        <span class="section-label" style="margin:0">Assigner des permissions</span>
+        <div class="assign-actions">
+          <button class="btn-link" (click)="selectAll()">Tout sélectionner</button>
+          <span class="separator">·</span>
+          <button class="btn-link" (click)="deselectAll()">Tout désélectionner</button>
+          <span class="separator">·</span>
+          <span class="selected-count">{{ selectedPermIds.size }} sélectionnée(s)</span>
+        </div>
+      </div>
+
+      <div *ngIf="isLoadingPerms" class="loading-text">Chargement des permissions...</div>
+      <div *ngIf="!isLoadingPerms && allPermissions.length === 0" class="empty-perms">Aucune permission disponible.</div>
+
+      <div *ngIf="!isLoadingPerms && allPermissions.length > 0" class="accordion-wrapper">
+        <div class="accord-global-header">
+          <label class="cb-label">
+            <input type="checkbox"
+                   [checked]="selectedPermIds.size === allPermissions.length"
+                   (change)="selectedPermIds.size === allPermissions.length ? deselectAll() : selectAll()">
+            <span>Toutes les permissions</span>
+          </label>
+          <span class="selected-count">{{ selectedPermIds.size }} / {{ allPermissions.length }}</span>
+        </div>
+
+        <div class="accord-module" *ngFor="let mod of getModuleInterfaceKeys()">
+          <div class="accord-mod-header" (click)="toggleModuleAccordion(mod)">
+            <div class="accord-mod-left">
+              <label class="cb-label" (click)="$event.stopPropagation()">
+                <input type="checkbox"
+                       [checked]="isModuleFullySelected(mod)"
+                       [indeterminate]="isModulePartiallySelected(mod)"
+                       (change)="toggleModule(mod)">
+              </label>
+              <span class="accord-mod-name">{{ formatModule(mod) }}</span>
+              <span class="mod-count">{{ countSelectedInModule(mod) }}/{{ permissionsByModule[mod].length }}</span>
+            </div>
+            <div class="accord-mod-right">
+              <svg class="accord-arrow" [class.open]="isModuleOpen(mod)"
+                   width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="accord-body" *ngIf="isModuleOpen(mod)">
+            <table class="perm-table">
+              <thead>
+                <tr>
+                  <th class="th-module"></th>
+                  <th class="th-action" *ngFor="let action of ['POST','DELETE','GET','PUT']">
+                    <span class="action-head" [ngClass]="'head-' + action.toLowerCase()">{{ getActionLabel(action) }}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let iface of getInterfaceKeys(mod); let odd = odd"
+                    [class.row-odd]="odd" class="row-interface">
+                  <td class="td-interface">
+                    <label class="cb-label cb-iface">
+                      <input type="checkbox"
+                             [checked]="isInterfaceFullySelected(mod, iface)"
+                             (change)="toggleInterface(mod, iface)">
+                      <span class="iface-dot"></span>
+                      <span class="iface-name">{{ iface }}</span>
+                      <span class="mod-count">{{ permsByModuleAndInterface[mod][iface].length }}</span>
+                    </label>
+                  </td>
+                  <td class="td-action" *ngFor="let action of ['POST','DELETE','GET','PUT']">
+                    <ng-container *ngIf="getPermByActionAndInterface(mod, iface, action) as perm; else noAction">
+                      <label class="cb-action-label">
+                        <input type="checkbox"
+                               [checked]="selectedPermIds.has(perm.id)"
+                               (change)="togglePerm(perm.id)">
+                        <span class="cb-custom" [ngClass]="'cb-' + action.toLowerCase()"></span>
+                      </label>
+                    </ng-container>
+                    <ng-template #noAction><span class="no-action">—</span></ng-template>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <div>
+        <div *ngIf="successMsg" class="alert alert-success">{{ successMsg }}</div>
+        <div *ngIf="errorMsg" class="alert alert-error">{{ errorMsg }}</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" (click)="toggleForm()">Annuler</button>
+        <button class="btn btn-primary" (click)="createProfil()">
+          Créer le profil
+          <span class="btn-badge" *ngIf="selectedPermIds.size > 0">{{ selectedPermIds.size }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grille des profils -->
+  <div *ngIf="isLoading" class="loading-text">Chargement...</div>
+
+  <div class="profil-grid" *ngIf="!isLoading && profils.length > 0">
+    <div *ngFor="let profil of profils"
+         class="profil-card"
+         [class.selected]="selectedProfil?.id === profil.id"
+         (click)="selectProfil(profil)">
+      <div class="card-top">
+        <div class="avatar" [ngClass]="getAvatarClass(profil.code)">
+          {{ profil.nom.slice(0,2).toUpperCase() }}
+        </div>
+        <div class="card-info">
+          <div class="card-name">{{ profil.nom }}</div>
+          <span class="code-badge" [ngClass]="getBadgeClass(profil.code)">{{ profil.code }}</span>
+        </div>
+        <button class="btn-icon-delete" (click)="deleteProfil(profil.id!); $event.stopPropagation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="card-meta">{{ (profil.permissions || []).length }} permissions</div>
+    </div>
+  </div>
+
+  <div class="detail-section" *ngIf="selectedProfil && !showForm">
+
+  <!-- Header -->
+  <div class="detail-header">
+    <div class="avatar lg" [ngClass]="getAvatarClass(selectedProfil.code)">
+      {{ selectedProfil.nom.slice(0,2).toUpperCase() }}
+    </div>
+    <div class="detail-header-info">
+      <h2>{{ selectedProfil.nom }}</h2>
+      <div class="detail-sub">
+        <span class="code-badge" [ngClass]="getBadgeClass(selectedProfil.code)">
+          {{ selectedProfil.code }}
+        </span>
+        <span class="perm-count">{{ safePermissions.length }} permissions</span>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-edit-perms"
+            (click)="openEditPermissions(selectedProfil)">
+      Modifier les permissions
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-val">{{ safePermissions.length }}</div>
+      <div class="stat-lbl">Permissions totales</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">{{ getModuleKeys(selectedProfil).length }}</div>
+      <div class="stat-lbl">Modules couverts</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">{{ countActions(selectedProfil) }}</div>
+      <div class="stat-lbl">Types d'actions</div>
+    </div>
+  </div>
+
+  <!-- Tableau matriciel avec accordion par module -->
+  <div class="section-label">Permissions par module</div>
+
+  <div class="matrix-wrapper" *ngIf="safePermissions.length > 0">
+
+    <!-- Header colonnes fixe -->
+    <div class="matrix-col-header">
+      <div class="matrix-col-iface">Module / Interface</div>
+      <div class="matrix-col-action col-lecture">Lecture</div>
+      <div class="matrix-col-action col-creation">Création</div>
+      <div class="matrix-col-action col-update">Mise à jour</div>
+      <div class="matrix-col-action col-delete">Suppression</div>
+    </div>
+
+    <!-- Accordion par module -->
+    <div class="matrix-module"
+         *ngFor="let mod of getModuleKeys(selectedProfil)">
+
+      <!-- Header module cliquable -->
+      <div class="matrix-mod-header"
+           (click)="toggleDetailModule(mod)"
+           [class.open]="isDetailModuleOpen(mod)">
+        <div class="matrix-mod-left">
+          <svg class="matrix-arrow" [class.open]="isDetailModuleOpen(mod)"
+               width="14" height="14" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+          <span class="matrix-mod-name">{{ formatModule(mod) }}</span>
+          <span class="matrix-mod-count">
+            {{ getPermissionsByModule(selectedProfil)[mod].length }} perm.
+          </span>
+        </div>
+        <!-- Résumé actions du module (visible même fermé) -->
+        <div class="matrix-mod-summary">
+          <span *ngFor="let a of ['GET','POST','PUT','DELETE']"
+                class="summary-chip"
+                [class.active]="hasAction(getPermissionsByModule(selectedProfil)[mod], a)"
+                [ngClass]="'chip-' + a.toLowerCase()">
+            {{ getActionShort(a) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Corps accordion -->
+      <div class="matrix-mod-body" *ngIf="isDetailModuleOpen(mod)">
+        <table class="matrix-table">
+          <tbody>
+            <tr *ngFor="let iface of getInterfaceKeysForProfil(selectedProfil, mod); let odd = odd"
+                [class.row-odd]="odd">
+              <td class="td-iface">
+                <span class="iface-dot"></span>
+                {{ iface }}
+              </td>
+              <td class="td-check" *ngFor="let a of ['GET','POST','PUT','DELETE']">
+                <span *ngIf="hasActionInInterface(selectedProfil, mod, iface, a)"
+                      class="check-yes" [ngClass]="'check-' + a.toLowerCase()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </span>
+                <span *ngIf="!hasActionInInterface(selectedProfil, mod, iface, a)"
+                      class="check-no">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <div *ngIf="safePermissions.length === 0" class="empty-perms">
+    Aucune permission associée à ce profil.
+  </div>
+
+</div>
+
+  <!-- ✅ Modal édition permissions -->
+  <div class="overlay" *ngIf="showEditPermModal && editingProfil" (click)="showEditPermModal = false">
+    <div class="modal modal-large" (click)="$event.stopPropagation()">
+
+      <h2>Modifier les permissions — {{ editingProfil.nom }}</h2>
+
+      <div class="accordion-wrapper" style="max-height: 60vh; overflow-y: auto;">
+
+        <div class="accord-global-header">
+          <label class="cb-label">
+            <input type="checkbox"
+                   [checked]="editSelectedPermIds.size === allPermissions.length"
+                   (change)="toggleAllEditPerms()">
+            <span>Toutes les permissions</span>
+          </label>
+          <span class="selected-count">{{ editSelectedPermIds.size }} / {{ allPermissions.length }}</span>
+        </div>
+
+        <div class="accord-module" *ngFor="let mod of getModuleInterfaceKeys()">
+          <div class="accord-mod-header" (click)="toggleModuleAccordion(mod)">
+            <div class="accord-mod-left">
+              <label class="cb-label" (click)="$event.stopPropagation()">
+                <input type="checkbox"
+                       [checked]="isEditModuleFullySelected(mod)"
+                       [indeterminate]="isEditModulePartiallySelected(mod)"
+                       (change)="toggleEditModule(mod)">
+              </label>
+              <span class="accord-mod-name">{{ formatModule(mod) }}</span>
+              <span class="mod-count">{{ countEditSelectedInModule(mod) }}/{{ permissionsByModule[mod].length }}</span>
+            </div>
+            <div class="accord-mod-right">
+              <svg class="accord-arrow" [class.open]="isModuleOpen(mod)"
+                   width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="accord-body" *ngIf="isModuleOpen(mod)">
+            <table class="perm-table">
+              <thead>
+                <tr>
+                  <th class="th-module"></th>
+                  <th class="th-action" *ngFor="let action of ['POST','DELETE','GET','PUT']">
+                    <span class="action-head" [ngClass]="'head-' + action.toLowerCase()">{{ getActionLabel(action) }}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let iface of getInterfaceKeys(mod); let odd = odd"
+                    [class.row-odd]="odd" class="row-interface">
+                  <td class="td-interface">
+                    <label class="cb-label cb-iface">
+                      <input type="checkbox"
+                             [checked]="isEditInterfaceFullySelected(mod, iface)"
+                             (change)="toggleEditInterface(mod, iface)">
+                      <span class="iface-dot"></span>
+                      <span class="iface-name">{{ iface }}</span>
+                    </label>
+                  </td>
+                  <td class="td-action" *ngFor="let action of ['POST','DELETE','GET','PUT']">
+                    <ng-container *ngIf="getPermByActionAndInterface(mod, iface, action) as perm; else noAction2">
+                      <label class="cb-action-label">
+                        <input type="checkbox"
+                               [checked]="editSelectedPermIds.has(perm.id)"
+                               (change)="toggleEditPerm(perm.id)">
+                        <span class="cb-custom" [ngClass]="'cb-' + action.toLowerCase()"></span>
+                      </label>
+                    </ng-container>
+                    <ng-template #noAction2><span class="no-action">—</span></ng-template>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:1rem; padding-top:1rem; border-top: 0.5px solid #e5e7eb;">
+        <button class="btn" (click)="showEditPermModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="saveEditPermissions()">
+          Enregistrer ({{ editSelectedPermIds.size }} permissions)
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ✅ Empty state -->
+  <div class="empty-state" *ngIf="!selectedProfil && !isLoading && profils.length > 0 && !showForm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <p>Cliquez sur un profil pour voir ses permissions</p>
+  </div>
+
+</div>

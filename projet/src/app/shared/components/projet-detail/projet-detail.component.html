@@ -1,0 +1,2280 @@
+<div class="detail-page">
+
+  <div class="breadcrumb">
+    <a routerLink="/projets">← Projets</a>
+    <span>/</span>
+    <span>{{ projet?.titre }}</span>
+  </div>
+
+ <div class="projet-header" *ngIf="projet">
+  <div class="projet-header-left">
+    <div class="projet-icon-lg">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h5l2 2.5h7a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/></svg>
+    </div>
+    <div class="projet-header-text">
+      <h1>{{ projet.titre }}</h1>
+      <p class="projet-desc-header">{{ projet.description }}</p>
+    </div>
+  </div>
+  <span class="badge" [ngClass]="statutClass(projet.statut)">
+    {{ statutLabel(projet.statut) }}
+  </span>
+</div>
+
+<!-- ── Analyse IA ── -->
+<div class="ia-section" *ngIf="projet">
+  <button class="btn btn-primary btn-ia" (click)="genererSynthese()" [disabled]="loadingIa">
+    <span *ngIf="!loadingIa">Analyse IA du projet</span>
+    <span *ngIf="loadingIa"> Analyse en cours…</span>
+  </button>
+
+  <div class="ia-card" *ngIf="synthese">
+    <div class="ia-card-head">
+      <span class="ia-card-title"> Synthèse intelligente</span>
+    </div>
+    <p class="ia-card-body" style="white-space: pre-line;">{{ synthese }}</p>
+  </div>
+</div>
+
+
+
+
+
+
+  <div class="kpi-grid" *ngIf="projet">
+
+  <!-- Budget initial -->
+  <div class="kpi-card kpi-card--blue">
+    <div class="kpi-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><path d="M21 12a2 2 0 0 0-2-2h-4a2 2 0 0 0 0 4h4a2 2 0 0 0 2-2Z"/></svg>
+    </div>
+    <div>
+      <p class="kpi-label">Budget initial</p>
+      <p class="kpi-val">{{ projet.budgetInitial ? (projet.budgetInitial | number) + ' DT' : '—' }}</p>
+    </div>
+  </div>
+
+  <!-- Total estimé -->
+  <div class="kpi-card kpi-card--navy">
+    <div class="kpi-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="8"/><line x1="18" y1="20" x2="18" y2="4"/></svg>
+    </div>
+    <div>
+      <p class="kpi-label">Total estimé</p>
+      <p class="kpi-val">{{ totalEstimation | number:'1.0-2' }} DT</p>
+    </div>
+  </div>
+
+  <!-- Coût réel -->
+  <div class="kpi-card kpi-card--green">
+    <div class="kpi-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div>
+      <p class="kpi-label">Coût réel</p>
+      <p class="kpi-val">{{ totalCoutReel | number:'1.0-2' }} DT</p>
+    </div>
+  </div>
+
+  <!-- Coût prévisionnel -->
+  <div class="kpi-card kpi-card--amber">
+    <div class="kpi-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
+    </div>
+    <div>
+      <p class="kpi-label">Coût prévisionnel</p>
+      <p class="kpi-val">{{ totalCoutPrev | number:'1.0-2' }} DT</p>
+    </div>
+  </div>
+
+  <!-- Écart budget (couleur dynamique) -->
+  <div class="kpi-card" *ngIf="comparaison"
+       [ngClass]="comparaison.ecart > 0 ? 'kpi-card--red' : 'kpi-card--green'">
+    <div class="kpi-icon">
+      <svg *ngIf="comparaison.ecart > 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <svg *ngIf="comparaison.ecart <= 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div>
+      <p class="kpi-label">Écart budget</p>
+      <p class="kpi-val">
+        {{ comparaison.ecart > 0 ? '+' : '' }}{{ comparaison.ecart | number:'1.0-2' }} DT
+      </p>
+    </div>
+  </div>
+
+  <!-- Avancement -->
+  <div class="kpi-card kpi-card--teal">
+    <div class="kpi-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+    </div>
+    <div>
+      <p class="kpi-label">Avancement</p>
+      <p class="kpi-val">{{ projet.tauxAvancement || 0 }}%</p>
+    </div>
+  </div>
+
+</div>
+  <div class="tabs">
+
+  <button class="tab-btn" [class.active]="activeTab === 'infos'" (click)="setTab('infos')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    Informations
+  </button>
+
+  <button class="tab-btn" [class.active]="activeTab === 'contrat'" (click)="setTab('contrat')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Contrat
+  </button>
+
+  <button class="tab-btn" [class.active]="activeTab === 'avenants'" (click)="setTab('avenants')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+    Avenants ({{ avenants.length }})
+  </button>
+
+  <button class="tab-btn" [class.active]="activeTab === 'estimations'" (click)="setTab('estimations')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Estimations ({{ estimations.length }})
+  </button>
+
+  <button class="tab-btn" [class.active]="activeTab === 'prevs'" (click)="setTab('prevs')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
+    Coûts Prévisionnels ({{ coutsPrevs.length }})
+  </button>
+
+  <button class="tab-btn" [class.active]="activeTab === 'reels'" (click)="setTab('reels')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    Coûts Réels ({{ coutsReels.length }})
+  </button>
+
+  <button class="tab-btn" [class.active]="activeTab === 'comparaison'" (click)="setTab('comparaison')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg>
+    Comparaison
+  </button>
+
+  <button class="tab-btn" [class.active]="activeTab === 'facturation'" (click)="setTab('facturation')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    Facturation
+  </button>
+
+  <button class="tab-btn" [class.active]="activeTab === 'livrables'" (click)="setTab('livrables')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+    Livrables ({{ livrables.length }})
+  </button>
+
+  <button class="tab-btn" [class.active]="activeTab === 'kpi'" (click)="setTab('kpi')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+    KPI Mensuels
+  </button>
+
+  <button class="tab-btn" [class.active]="activeTab === 'risques'" (click)="setTab('risques')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Risques &amp; Actions ({{ risques.length + actions.length }})
+  </button>
+
+</div>
+
+
+
+
+  <!-- Tab: Informations -->
+  <ng-container *ngIf="activeTab === 'infos'">
+    <div class="tab-content" *ngIf="projet">
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Date démarrage</span>
+          <span class="info-val">{{ projet.dateDemarrage | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Date fin prévue</span>
+          <span class="info-val">{{ projet.dateFinPrevu | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Budget initial</span>
+          <span class="info-val">{{ projet.budgetInitial ? (projet.budgetInitial | number) + ' DT' : '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Montant total</span>
+          <span class="info-val">{{ projet.montantTotal ? (projet.montantTotal | number) + ' DT' : '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Marge nette</span>
+          <span class="info-val">{{ projet.margeNette ? (projet.margeNette | number) + ' DT' : '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Statut</span>
+          <span class="badge" [ngClass]="statutClass(projet.statut)">{{ statutLabel(projet.statut) }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Durée prévue</span>
+          <span class="info-val">{{ getNbrJoursPrevus() }} jours</span>
+        </div>
+      </div>
+      <!-- ───────── NOMENCLATURES ───────── -->
+      <div class="nomenclature-section">
+
+        <div class="section-header">
+          <h3>Nomenclatures du projet</h3>
+        </div>
+
+        <!-- CLIENT -->
+        <div class="nomenclature-card" *ngIf="projet?.client">
+          <div class="nomenclature-icon"></div>
+
+          <div class="nomenclature-content">
+            <p class="nom">Client</p>
+            <p class="desc">
+              {{ projet?.client?.nom }}
+            </p>
+          </div>
+        </div>
+
+        <!-- MODELE -->
+        <div class="nomenclature-card" *ngIf="projet?.modeleBusiness">
+          <div class="nomenclature-icon"></div>
+
+          <div class="nomenclature-content">
+            <p class="nom">Modèle Business</p>
+            <p class="desc">
+              {{ projet?.modeleBusiness?.nom }}
+            </p>
+          </div>
+        </div>
+
+        <!-- DEVISE -->
+        <div class="nomenclature-card" *ngIf="projet?.devise">
+          <div class="nomenclature-icon"></div>
+
+          <div class="nomenclature-content">
+            <p class="nom">Devise</p>
+            <p class="desc">
+              {{ projet?.devise?.nom }}
+            </p>
+          </div>
+        </div>
+
+        <!-- BAILLEUR -->
+        <div class="nomenclature-card" *ngIf="projet?.bailleur">
+          <div class="nomenclature-icon"></div>
+
+          <div class="nomenclature-content">
+            <p class="nom">Bailleur</p>
+            <p class="desc">
+              {{ projet?.bailleur?.nom }}
+            </p>
+          </div>
+        </div>
+
+        <!-- PARTENAIRE -->
+        <div class="nomenclature-card" *ngIf="projet?.partenaire">
+          <div class="nomenclature-icon"></div>
+
+          <div class="nomenclature-content">
+            <p class="nom">Partenaire</p>
+            <p class="desc">
+              {{ projet?.partenaire?.nom }}
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+
+      <div class="progress-section">
+        <div class="progress-header">
+          <span>Avancement global</span>
+          <span class="fw-bold">{{ projet.tauxAvancement || 0 }}%</span>
+        </div>
+        <div class="progress-bar-lg">
+          <div class="progress-fill-lg" [style.width.%]="projet.tauxAvancement || 0" [style.background]="projet.tauxAvancement && projet.tauxAvancement >= 80 ? '#0f6e56' :
+                 projet.tauxAvancement && projet.tauxAvancement >= 50 ? '#185FA5' : '#f59e0b'">
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+ <!-- Tab: Avenants -->
+<ng-container *ngIf="activeTab === 'avenants'">
+  <div class="tab-content">
+
+    <div class="tab-header">
+      <h3>Avenants au contrat</h3>
+      <button class="btn btn-primary" (click)="openAvenantCreate()">
+        + Ajouter un avenant
+      </button>
+    </div>
+
+    <!-- Banner résumé -->
+    <div class="avenant-banner" *ngIf="avenants.length > 0">
+
+  <div class="avenant-stat av-blue">
+    <span class="avenant-stat-icon ic-blue">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+    </span>
+    <div>
+      <p class="avenant-stat-label">Total avenants</p>
+      <p class="avenant-stat-val">{{ totalAvenants }}</p>
+    </div>
+  </div>
+
+  <div class="avenant-stat av-teal">
+    <span class="avenant-stat-icon ic-teal">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+    </span>
+    <div>
+      <p class="avenant-stat-label">Montant révisé</p>
+      <p class="avenant-stat-val text-blue">
+        {{ montantReviseTotal | number:'1.0-2' }} DT
+      </p>
+    </div>
+  </div>
+
+  <div class="avenant-stat" [ngClass]="deltaTotal > 0 ? 'av-red' : 'av-green'">
+    <span class="avenant-stat-icon"
+          [ngClass]="deltaTotal > 0 ? 'ic-red' : 'ic-green'">
+      <svg *ngIf="deltaTotal >= 0" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      <svg *ngIf="deltaTotal < 0" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+    </span>
+    <div>
+      <p class="avenant-stat-label">Delta total</p>
+      <p class="avenant-stat-val"
+         [class.text-green]="deltaTotal < 0"
+         [class.text-red]="deltaTotal > 0">
+        {{ deltaTotal > 0 ? '+' : '' }}{{ deltaTotal | number:'1.0-2' }} DT
+      </p>
+    </div>
+  </div>
+
+</div>
+
+    <!-- Tableau -->
+    <table *ngIf="avenants.length > 0">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Objet</th>
+          <th>Montant initial</th>
+          <th>Montant révisé</th>
+          <th>Delta</th>
+          <th>Impact délais</th>
+          <th>Date signature</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of avenants">
+          <td class="fw-bold">{{ a.numero }}</td>
+          <td style="max-width:200px">{{ a.objet }}</td>
+          <td>{{ a.montantInitial | number:'1.0-2' }} DT</td>
+          <td class="fw-bold text-blue">{{ a.montantRevise | number:'1.0-2' }} DT</td>
+          <td [class.text-red]="(a.deltaMontant||0) > 0"
+              [class.text-green]="(a.deltaMontant||0) < 0"
+              class="fw-bold">
+            {{ (a.deltaMontant||0) > 0 ? '+' : '' }}{{ a.deltaMontant | number:'1.0-2' }} DT
+          </td>
+          <td [class.text-red]="(a.impactDelais||0) > 0"
+              [class.text-green]="(a.impactDelais||0) < 0">
+            {{ (a.impactDelais||0) > 0 ? '+' : '' }}{{ a.impactDelais || 0 }} j
+          </td>
+          <td>{{ a.dateSignature | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <span class="badge" [ngClass]="getAvenantStatutClass(a.statut)">
+              {{ getAvenantStatutLabel(a.statut) }}
+            </span>
+          </td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-edit btn-sm"
+                      (click)="openAvenantEdit(a)">Modifier</button>
+              <button class="btn btn-delete btn-sm"
+                      (click)="deleteAvenant(a.id!)">Supprimer</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="avenants.length === 0" class="empty-state">
+      Aucun avenant enregistré
+    </div>
+  </div>
+</ng-container>
+
+
+  <!-- Tab: Estimations -->
+  <ng-container *ngIf="activeTab === 'estimations'">
+    <div class="tab-content">
+      <div class="tab-header">
+        <h3>Estimations</h3>
+        <!-- ✅ Remettre le bouton + Ajouter -->
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button class="btn btn-primary" (click)="openEstimationCreate()">+ Ajouter</button>
+        </div>
+      </div>
+      <table *ngIf="estimations.length > 0">
+        <thead>
+          <tr>
+            <th>Ressource</th>
+            <th>Nbr Jours</th>
+            <th>Tarif H/J (DT)</th>
+            <th>Coût estimé (DT)</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of estimations">
+            <td>{{ e.ressource?.prenom }} {{ e.ressource?.nom }}</td>
+            <td>{{ e.nbrJours | number:'1.0-0' }}</td>
+            <td>{{ e.tarifHJ | number:'1.0-3' }}</td>
+            <td class="fw-bold text-blue">{{ e.coutEstime | number:'1.0-2' }}</td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-primary" (click)="openEstimationEdit(e)">Modifier</button>
+                <button class="btn btn-delete" (click)="openDelete('estimation', e.id!)">Supprimer</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" class="fw-bold">Total coût estimé</td>
+            <td class="fw-bold text-blue">{{ totalEstimation | number:'1.0-2' }} DT</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+      <div *ngIf="estimations.length === 0" class="empty-state">
+        Aucune estimation — affectez des membres au projet pour générer les estimations automatiquement.
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Tab: Coûts Réels -->
+  <ng-container *ngIf="activeTab === 'reels'">
+  <div class="tab-content">
+    <div class="tab-header">
+      <h3>Coûts Réels</h3>
+      <!-- ✅ Plus de bouton Ajouter — calculé depuis pointages -->
+      <button class="btn btn-recalcul" (click)="recalculerCoutsReels()">
+        Recalculer depuis pointages
+      </button>
+    </div>
+
+    <div *ngIf="groupesCoutsReels.length > 0">
+      <!-- Info message -->
+      <div class="info-banner">
+        Les coûts réels sont calculés automatiquement depuis les pointages des ressources.
+      </div>
+
+      <div class="cp-layout">
+
+        <!-- Sidebar ressources -->
+        <div class="cp-sidebar">
+          <p class="cp-sidebar-title">Ressources</p>
+          <div *ngFor="let g of groupesCoutsReels; let i = index"
+               class="cp-resource-item"
+               [class.cp-resource-active]="selectedGroupReelIndex === i"
+               (click)="selectedGroupReelIndex = i">
+            <div class="cp-avatar">{{ getInitiales(g.ressource) }}</div>
+            <div class="cp-resource-info">
+              <span class="cp-resource-nom">
+                {{ g.ressource.prenom }} {{ g.ressource.nom }}
+              </span>
+              <span class="cp-resource-sub">
+                {{ g.lignes.length }} mois · {{ g.totalJours | number:'1.0-1' }} j
+              </span>
+            </div>
+            <div class="cp-resource-right">
+              <span class="cp-resource-cout" style="color:#0f6e56">
+                {{ g.totalCout | number:'1.0-2' }} DT
+              </span>
+              <span class="cp-resource-arrow"
+                    [class.active]="selectedGroupReelIndex === i">›</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Détail droite -->
+        <div class="cp-detail" *ngIf="selectedGroupReel">
+          <div class="cp-detail-header">
+            <div class="cp-detail-user">
+              <div class="cp-avatar cp-avatar-lg">
+                {{ getInitiales(selectedGroupReel.ressource) }}
+              </div>
+              <div>
+                <h4 class="cp-detail-nom">
+                  {{ selectedGroupReel.ressource.prenom }}
+                  {{ selectedGroupReel.ressource.nom }}
+                </h4>
+                <div class="cp-detail-stats">
+                  <span class="cp-stat-chip">
+                    {{ selectedGroupReel.lignes.length }} mois
+                  </span>
+                  <span class="cp-stat-chip">
+                    {{ selectedGroupReel.totalJours | number:'1.0-1' }} jours
+                  </span>
+                  <span class="cp-stat-chip"
+                        style="background:#dcfce7; color:#0f6e56">
+                    {{ selectedGroupReel.totalCout | number:'1.0-2' }} DT
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cp-table-wrapper">
+            <table class="cp-table">
+              <thead>
+                <tr>
+                  <th>Mois</th>
+                  <th>Jours réels</th>
+                  <th>Coût réel (DT)</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of selectedGroupReel.lignes">
+                  <td><span class="mois-chip">{{ c.mois }}</span></td>
+                  <td>
+                    <div class="charge-cell">
+                      <div class="charge-bar-mini">
+                        <div class="charge-bar-fill-mini"
+                             [style.width.%]="(c.nbrJoursReel || 0) / 22 * 100"
+                             style="background:#0f6e56">
+                        </div>
+                      </div>
+                      <span class="fw-bold text-green">
+                        {{ c.nbrJoursReel }} j
+                      </span>
+                    </div>
+                  </td>
+                  <td class="fw-bold text-green">
+                    {{ c.coutReel | number:'1.0-2' }} DT
+                  </td>
+                  <td>
+                    <button class="btn btn-delete btn-sm"
+                            (click)="openDelete('coutReel', c.id!)">
+                      Supprimer
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td class="fw-bold">Total</td>
+                  <td class="fw-bold text-green">
+                    {{ selectedGroupReel.totalJours | number:'1.0-1' }} j
+                  </td>
+                  <td class="fw-bold text-green">
+                    {{ selectedGroupReel.totalCout | number:'1.0-2' }} DT
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Total général -->
+      <div class="cp-total-general" style="border-top-color:#9fe1cb">
+        <span class="fw-bold">Total général coût réel</span>
+        <span class="fw-bold text-green">
+          {{ totalCoutReel | number:'1.0-2' }} DT
+        </span>
+      </div>
+    </div>
+
+    <div *ngIf="groupesCoutsReels.length === 0" class="empty-state">
+      <p>Aucun coût réel calculé</p>
+      <p style="font-size:12px; color:#9ca3af; margin-top:8px">
+        Les coûts réels sont générés automatiquement depuis les pointages des ressources.
+        Demandez aux membres de pointer leurs heures dans "Mes Projets".
+      </p>
+      <button class="btn btn-primary"
+              style="margin-top:12px"
+              (click)="recalculerCoutsReels()">
+        Recalculer maintenant
+      </button>
+    </div>
+  </div>
+</ng-container>
+
+  <!-- ✅ Tab: Coûts Prévisionnels -->
+  <ng-container *ngIf="activeTab === 'prevs'">
+    <div class="tab-content">
+      <div class="tab-header">
+        <h3>Coûts Prévisionnels</h3>
+        <button class="btn btn-primary" (click)="openCoutPrevCreate()">+ Ajouter</button>
+      </div>
+
+      <div *ngIf="groupesCoutsPrev.length > 0">
+        <div class="cp-layout">
+
+          <!-- Sidebar gauche -->
+          <div class="cp-sidebar">
+            <p class="cp-sidebar-title">Ressources</p>
+            <div *ngFor="let g of groupesCoutsPrev; let i = index" class="cp-resource-item"
+              [class.cp-resource-active]="selectedGroupIndex === i" (click)="selectGroup(i)">
+              <div class="cp-avatar">{{ getInitiales(g.ressource) }}</div>
+              <div class="cp-resource-info">
+                <span class="cp-resource-nom">{{ g.ressource.prenom }} {{ g.ressource.nom }}</span>
+                <span class="cp-resource-sub">{{ g.lignes.length }} mois · {{ g.totalCharge | number:'1.0-1' }} j</span>
+              </div>
+              <div class="cp-resource-right">
+                <span class="cp-resource-cout">{{ g.totalCout | number:'1.0-2' }} DT</span>
+                <span class="cp-resource-arrow" [class.active]="selectedGroupIndex === i">›</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Détail droite -->
+          <div class="cp-detail" *ngIf="selectedGroup">
+            <div class="cp-detail-header">
+              <div class="cp-detail-user">
+                <div class="cp-avatar cp-avatar-lg">{{ getInitiales(selectedGroup.ressource) }}</div>
+                <div>
+                  <h4 class="cp-detail-nom">{{ selectedGroup.ressource.prenom }} {{ selectedGroup.ressource.nom }}</h4>
+                  <div class="cp-detail-stats">
+                    <span class="cp-stat-chip">{{ selectedGroup.lignes.length }} mois</span>
+                    <span class="cp-stat-chip">{{ selectedGroup.totalCharge | number:'1.0-1' }} jours</span>
+                    <span class="cp-stat-chip orange">{{ selectedGroup.totalCout | number:'1.0-2' }} DT</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cp-table-wrapper">
+              <table class="cp-table">
+                <thead>
+                  <tr>
+                    <th>Mois</th>
+                    <th>Charge</th>
+                    <th>Coût prév.</th>
+                    <th>Cumulé</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let c of selectedGroup.lignes">
+                    <td><span class="mois-chip">{{ c.mois }}</span></td>
+                    <td>
+                      <div class="charge-cell">
+                        <div class="charge-bar-mini">
+                          <div class="charge-bar-fill-mini" [style.width.%]="(c.chargePrevuM || 0) / 22 * 100">
+                          </div>
+                        </div>
+                        <span class="fw-bold">{{ c.chargePrevuM }} j</span>
+                      </div>
+                    </td>
+                    <td class="fw-bold text-orange">{{ c.coutPrev | number:'1.0-2' }} DT</td>
+                    <td class="text-muted">{{ c.nbrJours | number:'1.0-1' }} j</td>
+                    <td>
+                      <div class="actions">
+                        <button class="btn btn-edit btn-sm" (click)="openCoutPrevEdit(c)">Modifier</button>
+                        <button class="btn btn-delete btn-sm" (click)="openDelete('coutPrev', c.id!)">Supprimer</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td class="fw-bold">Total</td>
+                    <td class="fw-bold">{{ selectedGroup.totalCharge | number:'1.0-1' }} j</td>
+                    <td class="fw-bold text-orange">{{ selectedGroup.totalCout | number:'1.0-2' }} DT</td>
+                    <td colspan="2"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="cp-total-general">
+          <span class="fw-bold">Total général</span>
+          <span class="fw-bold text-orange">{{ totalCoutPrev | number:'1.0-2' }} DT</span>
+        </div>
+      </div>
+
+      <div *ngIf="groupesCoutsPrev.length === 0" class="empty-state">
+        Aucun coût prévisionnel enregistré
+      </div>
+    </div>
+  </ng-container>
+
+
+  <!-- Tab: Comparaison -->
+  <ng-container *ngIf="activeTab === 'comparaison'">
+  <div class="tab-content">
+    <h3>Comparaison Prévu vs Réel</h3>
+
+    <div class="comparaison-grid" *ngIf="comparaison">
+
+      <div class="comp-card comp-prev">
+        <div class="comp-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
+        </div>
+        <p class="comp-label">Total Prévisionnel</p>
+        <p class="comp-val">{{ comparaison.totalPrevisionnel | number:'1.0-2' }} DT</p>
+      </div>
+
+      <div class="comp-card comp-reel">
+        <div class="comp-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <p class="comp-label">Total Réel</p>
+        <p class="comp-val">{{ comparaison.totalReel | number:'1.0-2' }} DT</p>
+      </div>
+
+      <div class="comp-card" [class.comp-danger]="comparaison.ecart > 0" [class.comp-ok]="comparaison.ecart <= 0">
+        <div class="comp-icon">
+          <svg *ngIf="comparaison.ecart > 0" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <svg *ngIf="comparaison.ecart <= 0" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <p class="comp-label">Écart</p>
+        <p class="comp-val">{{ comparaison.ecart > 0 ? '+' : '' }}{{ comparaison.ecart | number:'1.0-2' }} DT</p>
+        <p class="comp-pct">{{ comparaison.ecartPourcentage }}%</p>
+      </div>
+
+      <div class="comp-card" [class.comp-danger]="comparaison.statut === 'DEPASSEMENT'"
+        [class.comp-ok]="comparaison.statut !== 'DEPASSEMENT'">
+        <div class="comp-icon">
+          <svg *ngIf="comparaison.statut === 'DEPASSEMENT'" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <svg *ngIf="comparaison.statut !== 'DEPASSEMENT'" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <p class="comp-label">Statut budget</p>
+        <p class="comp-val-status">{{ comparaison.statut === 'DEPASSEMENT' ? 'Dépassement' : 'Dans le budget' }}</p>
+      </div>
+
+    </div>
+
+    <div class="comp-bars" *ngIf="comparaison && comparaison.totalPrevisionnel > 0">
+      <div class="comp-bar-item">
+        <span class="comp-bar-label">Prévisionnel</span>
+        <div class="comp-bar-track">
+          <div class="comp-bar-fill" style="background:#185FA5; width:100%"></div>
+        </div>
+        <span class="comp-bar-val">{{ comparaison.totalPrevisionnel | number:'1.0-2' }} DT</span>
+      </div>
+      <div class="comp-bar-item">
+        <span class="comp-bar-label">Réel</span>
+        <div class="comp-bar-track">
+          <div class="comp-bar-fill" [style.background]="comparaison.ecart > 0 ? '#dc2626' : '#0f6e56'"
+            [style.width.%]="(comparaison.totalReel / comparaison.totalPrevisionnel) * 100">
+          </div>
+        </div>
+        <span class="comp-bar-val">{{ comparaison.totalReel | number:'1.0-2' }} DT</span>
+      </div>
+    </div>
+
+    <div *ngIf="!comparaison" class="empty-state">Aucune donnée de comparaison disponible.</div>
+  </div>
+</ng-container>
+
+<!-- Tab: Contrat -->
+ <ng-container *ngIf="activeTab === 'contrat'">
+  <div class="tab-content">
+    <div class="tab-header">
+      <h3>Contrat</h3>
+      <button class="btn btn-primary"
+        (click)="openContratCreate()"
+        [disabled]="contrats.length > 0"
+        [title]="contrats.length > 0 ? 'Un contrat existe déjà pour ce projet' : ''">
+        + Ajouter
+      </button>
+    </div>
+
+    <div *ngIf="contrats.length > 0">
+      <div class="contrat-card" *ngFor="let c of contrats">
+        <div class="contrat-header">
+          <div>
+            <span class="contrat-num">{{ c.numeroContrat }}</span>
+            <span class="contrat-title">{{ c.intitule }}</span>
+          </div>
+          <div class="actions">
+            <button class="btn btn-edit" (click)="openContratEdit(c)">Modifier</button>
+            <button class="btn btn-delete" (click)="deleteContrat(c.id!)">Supprimer</button>
+          </div>
+        </div>
+        <div class="info-grid" style="margin-top:12px">
+          <div class="info-item">
+            <span class="info-label">Montant total</span>
+            <span class="info-val fw-bold">{{ c.montantTotal | number:'1.0-2' }} DT</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Date signature</span>
+            <span class="info-val">{{ c.dateSignature | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Date échéance</span>
+            <span class="info-val">{{ c.dateEcheance | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Conditions paiement</span>
+            <span class="info-val">{{ c.conditionsPaiement }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="contrats.length === 0" class="empty-state">
+      Aucun contrat enregistré
+    </div>
+  </div>
+</ng-container>
+
+<!-- Tab: Facturation -->
+
+<ng-container *ngIf="activeTab === 'facturation'">
+  <div class="tab-content">
+    <div class="tab-header">
+      <h3>Échéances de Facturation</h3>
+      <button class="btn btn-primary" (click)="openEcheanceCreate()">+ Ajouter</button>
+    </div>
+
+    <table *ngIf="echeances.length > 0">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Objet</th>
+          <th>%</th>
+          <th>Montant Prévu (DT)</th>
+          <th>Montant Facturé (DT)</th>
+          <th>Date Initiale</th>
+          <th>Date Prév.</th>
+          <th>Date Réelle</th>
+          <th>Émise</th>
+          <th>Dérive (j)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let e of echeances">
+          <td class="fw-bold">{{ e.numero }}</td>
+          <td>{{ e.objet }}</td>
+          <td>{{ (e.pourcentage || 0) * 100 | number:'1.0-0' }}%</td>
+          <td class="fw-bold">{{ e.montantPrevu | number:'1.0-2' }}</td>
+          <td class="fw-bold text-green">{{ e.montantFacture ? (e.montantFacture | number:'1.0-2') : '—' }}</td>
+          <td>{{ e.dateInitiale | date:'dd/MM/yyyy' }}</td>
+          <td>{{ e.datePrevActualisee | date:'dd/MM/yyyy' }}</td>
+          <td>{{ e.dateReelle | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <span [class]="e.emise ? 'badge badge-termine' : 'badge badge-attente'">
+              {{ e.emise ? 'Oui' : 'Non' }}
+            </span>
+          </td>
+          <td [class.text-red]="getDerive(e) > 0" [class.text-green]="getDerive(e) <= 0">
+            {{ getDerive(e) !== 0 ? (getDerive(e) > 0 ? '+' : '') + getDerive(e) + 'j' : '—' }}
+          </td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-edit btn-sm" (click)="openEcheanceEdit(e)">Modifier</button>
+              <button class="btn btn-delete btn-sm" (click)="deleteEcheance(e.id!)">Supprimer</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="fw-bold">Total</td>
+          <td class="fw-bold">{{ totalMontantPrevu | number:'1.0-2' }} DT</td>
+          <td class="fw-bold text-green">{{ totalMontantFacture | number:'1.0-2' }} DT</td>
+          <td colspan="6"></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div *ngIf="echeances.length === 0" class="empty-state">Aucune échéance enregistrée</div>
+  </div>
+</ng-container>
+
+
+<!-- Tab: KPI Mensuels -->
+ <ng-container *ngIf="activeTab === 'kpi'">
+  <div class="tab-content">
+    <div class="tab-header">
+      <h3>KPI Mensuels</h3>
+      <button class="btn btn-primary" (click)="openKpiCreate()">+ Saisir KPI</button>
+    </div>
+
+    <div *ngIf="kpis.length === 0" class="empty-state">Aucun KPI saisi</div>
+
+    <!-- ✅ Cards KPI par mois -->
+    <div class="kpi-cards-list" *ngIf="kpis.length > 0">
+      <div class="kpi-month-card" *ngFor="let k of kpis">
+
+        <!-- Header mois -->
+        <div class="kpi-month-header">
+          <div class="kpi-month-left">
+            <span class="kpi-month-label">{{ k.mois | date:'MMMM yyyy' }}</span>
+            <span class="kpi-ev-chip"
+                  [class.chip-green]="(k.earnedValue||0) >= 0.8"
+                  [class.chip-orange]="(k.earnedValue||0) < 0.8 && (k.earnedValue||0) > 0"
+                  [class.chip-gray]="(k.earnedValue||0) === 0">
+              EV : {{ (k.earnedValue || 0) * 100 | number:'1.0-1' }}%
+            </span>
+          </div>
+          <div class="actions">
+            <button class="btn btn-edit btn-sm" (click)="openKpiEdit(k)">Modifier</button>
+            <button class="btn btn-delete btn-sm" (click)="deleteKpi(k.id!)">Supprimer</button>
+          </div>
+        </div>
+
+        <!-- Sections -->
+        <div class="kpi-month-body">
+
+          <!-- Taux d'avancement -->
+          <div class="kpi-section kpi-section-auto">
+            <div class="kpi-section-title">Taux d'avancement</div>
+            <div class="kpi-auto-grid">
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Delivery</span>
+                <span class="kpi-auto-val text-blue">
+                  {{ (k.delivery || 0) * 100 | number:'1.0-0' }}%
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Consomm. délais</span>
+                <span class="kpi-auto-val">
+                  {{ (k.consommationDelais || 0) * 100 | number:'1.0-0' }}%
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Taux facturation</span>
+                <span class="kpi-auto-val text-green">
+                  {{ (k.tauxFacturation || 0) * 100 | number:'1.0-0' }}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charges HJ -->
+          <div class="kpi-section kpi-section-auto">
+            <div class="kpi-section-title">Charges H-Jours</div>
+            <div class="kpi-auto-grid">
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Prévu mois</span>
+                <span class="kpi-auto-val">
+                  {{ (k.chargePrevueMois || 0) | number:'1.0-1' }} HJ
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Consommé mois</span>
+                <span class="kpi-auto-val text-orange">
+                  {{ (k.chargeConsommeeMois || 0) | number:'1.0-1' }} HJ
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Cumulé total</span>
+                <span class="kpi-auto-val fw-bold">
+                  {{ (k.chargeConsommeeCumul || 0) | number:'1.0-1' }} HJ
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">RAF ETC</span>
+                <span class="kpi-auto-val">
+                  {{ (k.resteAFaireETC || 0) | number:'1.0-1' }} HJ
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">RAF EAC</span>
+                <span class="kpi-auto-val">
+                  {{ (k.resteAFaireEAC || 0) | number:'1.0-1' }} HJ
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Dérive</span>
+                <span class="kpi-auto-val fw-bold"
+                      [class.text-red]="(k.derive||0) > 0"
+                      [class.text-green]="(k.derive||0) < 0">
+                  {{ k.derive != null ? (k.derive | number:'1.0-1') : '—' }} HJ
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coûts -->
+          <div class="kpi-section kpi-section-auto">
+            <div class="kpi-section-title">Coûts (DT)</div>
+            <div class="kpi-auto-grid">
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Coût réel mois</span>
+                <span class="kpi-auto-val">
+                  {{ (k.coutReel || 0) | number:'1.0-2' }} DT
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Coût cumulé</span>
+                <span class="kpi-auto-val fw-bold text-orange">
+                  {{ (k.coutReelCumul || 0) | number:'1.0-2' }} DT
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Coût ETC</span>
+                <span class="kpi-auto-val">
+                  {{ (k.coutETC || 0) | number:'1.0-2' }} DT
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Coût EAC</span>
+                <span class="kpi-auto-val fw-bold">
+                  {{ (k.coutEAC || 0) | number:'1.0-2' }} DT
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- CA & Marges -->
+          <div class="kpi-section kpi-section-auto">
+            <div class="kpi-section-title">CA & Marges (DT)</div>
+            <div class="kpi-auto-grid">
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">CA Facturé</span>
+                <span class="kpi-auto-val text-green fw-bold">
+                  {{ (k.caFacture || 0) | number:'1.0-2' }} DT
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">CA Production</span>
+                <span class="kpi-auto-val text-blue fw-bold">
+                  {{ (k.caProduction || 0) | number:'1.0-2' }} DT
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Stock FAE</span>
+                <span class="kpi-auto-val">
+                  {{ (k.stock || 0) | number:'1.0-2' }} DT
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Marge actuelle</span>
+                <span class="kpi-auto-val fw-bold"
+                      [class.text-green]="(k.margeNetteActuelle||0) > 0"
+                      [class.text-red]="(k.margeNetteActuelle||0) <= 0">
+                  {{ (k.margeNetteActuelle || 0) | number:'1.0-2' }} DT
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Marge EAC</span>
+                <span class="kpi-auto-val fw-bold"
+                      [class.text-green]="(k.margeNetteEAC||0) > 0"
+                      [class.text-red]="(k.margeNetteEAC||0) <= 0">
+                  {{ (k.margeNetteEAC || 0) | number:'1.0-2' }} DT
+                </span>
+              </div>
+              <div class="kpi-auto-item">
+                <span class="kpi-auto-label">Marge EAC %</span>
+                <span class="kpi-auto-val fw-bold"
+                      [class.text-green]="(k.margeNetteEACPct||0) > 0.2"
+                      [class.text-red]="(k.margeNetteEACPct||0) <= 0.1">
+                  {{ (k.margeNetteEACPct || 0) * 100 | number:'1.0-1' }}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Faits marquants -->
+          <div class="kpi-section kpi-section-manual"
+               *ngIf="k.faitsMarquants">
+            <div class="kpi-section-title">Faits Marquants</div>
+            <p style="font-size:13px; color:#374151; margin:0; line-height:1.6">
+              {{ k.faitsMarquants }}
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</ng-container>
+
+<!-- Tab: Livrables -->
+
+<ng-container *ngIf="activeTab === 'livrables'">
+  <div class="tab-content">
+
+    <div class="tab-header">
+      <h3>Livrables du projet</h3>
+      <span class="info-note" style="font-size:0.85rem;color:#666;">Les livrables sont définis lors de la création du contrat.</span>
+    </div>
+
+    <!-- KPI delivery -->
+    <div class="delivery-banner" *ngIf="livrables.length > 0">
+      <div class="delivery-kpi">
+        <div class="sc-stat-icon sc-stat-icon--blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <div>
+          <p class="delivery-label">Total livrables</p>
+          <p class="delivery-val">{{ totalLivrables }}</p>
+        </div>
+      </div>
+      <div class="delivery-kpi">
+        <div class="sc-stat-icon sc-stat-icon--orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div>
+          <p class="delivery-label">Réalisés</p>
+          <p class="delivery-val text-blue">{{ realisesCount }}</p>
+        </div>
+      </div>
+      <div class="delivery-kpi">
+        <div class="sc-stat-icon sc-stat-icon--green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        </div>
+        <div>
+          <p class="delivery-label">Livrés</p>
+          <p class="delivery-val text-green">{{ livresCount  }}</p>
+        </div>
+      </div>
+      <div class="delivery-kpi delivery-kpi-main">
+        <div class="sc-stat-icon sc-stat-icon--gray">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div>
+          <p class="delivery-label">Delivery %</p>
+          <p class="delivery-val"
+             [class.text-green]="deliveryGlobal >= 0.8"
+             [class.text-orange]="deliveryGlobal < 0.8 && deliveryGlobal >= 0.5"
+             [class.text-red]="deliveryGlobal < 0.5">
+            {{ deliveryGlobal * 100 | number:'1.0-0' }}%
+          </p>
+        </div>
+        <!-- Barre progression -->
+        <div class="delivery-progress">
+          <div class="delivery-progress-fill"
+               [style.width.%]="deliveryGlobal * 100"
+               [style.background]="deliveryGlobal >= 0.8 ? '#0f6e56' :
+                 deliveryGlobal >= 0.5 ? '#f59e0b' : '#dc2626'">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tableau livrables -->
+    <table *ngIf="livrables.length > 0">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Phase</th>
+          <th>Désignation</th>
+          <th>Date prévue</th>
+          <th>Réalisé</th>
+          <th>Livré</th>
+          <th>Date réelle</th>
+          <th>Delivery</th>
+          <th>Écart</th>
+          <th>Commentaire</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of livrables"
+            [class.row-livre]="l.livre"
+            [class.row-realise]="l.realise && !l.livre">
+          <td class="fw-bold">{{ l.numero }}</td>
+          <td>
+            <span class="phase-chip">{{ l.phase || '—' }}</span>
+          </td>
+          <td style="max-width: 250px;">{{ l.designation }}</td>
+          <td>{{ l.dateLivraisonPrevue | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <span [class]="l.realise ? 'badge badge-termine' : 'badge badge-attente'">
+              {{ l.realise ? 'Oui' : 'Non' }}
+            </span>
+          </td>
+          <td>
+            <span [class]="l.livre ? 'badge badge-termine' : 'badge badge-attente'">
+              {{ l.livre ? 'Oui' : 'Non' }}
+            </span>
+          </td>
+          <td>{{ l.dateLivraisonReelle | date:'dd/MM/yyyy' }}</td>
+          <td class="fw-bold"
+              [class.text-green]="l.delivery === 1"
+              [class.text-muted]="l.delivery === 0">
+            {{ l.delivery === 1 ? '100%' : '0%' }}
+          </td>
+          <td [ngClass]="getEcartClass(l.ecartJours)">
+            {{ getEcartLabel(l.ecartJours) }}
+          </td>
+          <td style="font-size:12px; color:#6b7280">{{ l.commentaire || '—' }}</td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-edit btn-sm"
+                      (click)="openLivrableEdit(l)">Modifier</button>
+              <button class="btn btn-delete btn-sm"
+                      (click)="deleteLivrable(l.id!)">Supprimer</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="7" class="fw-bold">Delivery global</td>
+          <td class="fw-bold"
+              [class.text-green]="deliveryGlobal >= 0.8"
+              [class.text-red]="deliveryGlobal < 0.5">
+            {{ deliveryGlobal * 100 | number:'1.0-0' }}%
+          </td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div *ngIf="livrables.length === 0" class="empty-state">
+      Aucun livrable enregistré
+    </div>
+  </div>
+</ng-container>
+
+
+
+ <!-- ── TAB RISQUE  ── -->
+<ng-container *ngIf="activeTab === 'risques'">
+  <div class="tab-content">
+
+    <!-- Banner stats -->
+    <div class="risque-banner">
+      <div class="risque-stat">
+        <div class="sc-stat-icon sc-stat-icon--blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <p class="risque-stat-label">Total risques</p>
+          <p class="risque-stat-val">{{ risques.length }}</p>
+        </div>
+      </div>
+      <div class="risque-stat">
+        <div class="sc-stat-icon sc-stat-icon--red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <p class="risque-stat-label">Risques critiques</p>
+          <p class="risque-stat-val text-red">{{ risquesCritiques }}</p>
+        </div>
+      </div>
+      <div class="risque-stat">
+        <div class="sc-stat-icon sc-stat-icon--gray">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        </div>
+        <div>
+          <p class="risque-stat-label">Actions totales</p>
+          <p class="risque-stat-val">{{ actions.length }}</p>
+        </div>
+      </div>
+      <div class="risque-stat">
+        <div class="sc-stat-icon sc-stat-icon--orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <p class="risque-stat-label">Actions en retard</p>
+          <p class="risque-stat-val text-red">{{ actionsEnRetard }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="risque-subtabs">
+      <button class="risque-subtab"
+              [class.active]="activeRisqueTab === 'risques'"
+              (click)="activeRisqueTab = 'risques'">
+        Base des risques ({{ risques.length }})
+      </button>
+      <button class="risque-subtab"
+              [class.active]="activeRisqueTab === 'actions'"
+              (click)="activeRisqueTab = 'actions'">
+        Plan d'actions ({{ actions.length }})
+      </button>
+    </div>
+
+    <div *ngIf="activeRisqueTab === 'risques'">
+      <div class="tab-header" style="margin-top:1rem">
+        <h3>Base des risques</h3>
+        <button class="btn btn-primary" (click)="openRisqueCreate()">
+          + Ajouter un risque
+        </button>
+      </div>
+
+      <table *ngIf="risques.length > 0">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Catégorie</th>
+            <th>Prob.</th>
+            <th>Impact</th>
+            <th>Criticité</th>
+            <th>Statut</th>
+            <th>Mesures</th>
+            <th>Échéance</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of risques">
+            <td class="fw-bold">{{ r.code }}</td>
+            <td style="max-width:200px">{{ r.description }}</td>
+            <td>
+              <span class="phase-chip">{{ r.categorie }}</span>
+            </td>
+            <td class="text-center">{{ r.probabilite }}/5</td>
+            <td class="text-center">{{ r.impact }}/5</td>
+            <td>
+              <span class="fw-bold" [ngClass]="getCriticiteClass(r.criticite)">
+                {{ r.criticite }} — {{ getCriticiteLabel(r.criticite) }}
+              </span>
+            </td>
+            <td>
+              <span class="badge"
+                    [ngClass]="r.statut === 'CLOS' ? 'badge-termine' :
+                               r.statut === 'MITIGE' ? 'badge-encours' :
+                               'badge-attente'">
+                {{ r.statut }}
+              </span>
+            </td>
+            <td style="font-size:11px; max-width:150px">
+              {{ r.mesuresMitigation || '—' }}
+            </td>
+            <td>{{ r.dateEcheance | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-edit btn-sm"
+                        (click)="openRisqueEdit(r)">Modifier</button>
+                <button class="btn btn-delete btn-sm"
+                        (click)="deleteRisque(r.id!)">Supprimer</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="risques.length === 0" class="empty-state">
+        Aucun risque enregistré
+      </div>
+    </div>
+
+    <!-- ══ PLAN D'ACTIONS ══ -->
+    <div *ngIf="activeRisqueTab === 'actions'">
+      <div class="tab-header" style="margin-top:1rem">
+        <h3>Plan d'actions</h3>
+        <button class="btn btn-primary" (click)="openActionCreate()">
+          + Ajouter une action
+        </button>
+      </div>
+
+      <table *ngIf="actions.length > 0">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Responsable</th>
+            <th>Date prévue</th>
+            <th>Date réelle</th>
+            <th>Statut</th>
+            <th>Risque lié</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of actions"
+              [style.background]="actionsEnRetard > 0 &&
+                a.statut !== 'TERMINE' &&
+                a.datePrevue && a.datePrevue < today
+                ? '#fef2f2' : ''">
+            <td class="fw-bold">{{ a.code }}</td>
+            <td style="max-width:200px">{{ a.description }}</td>
+            <td>
+              <span class="phase-chip"
+                    [style.background]="a.typeAction === 'CORRECTIVE'
+                      ? '#fef3c7' : '#eff6ff'"
+                    [style.color]="a.typeAction === 'CORRECTIVE'
+                      ? '#92400e' : '#185FA5'">
+                {{ a.typeAction }}
+              </span>
+            </td>
+            <td>{{ a.responsable }}</td>
+            <td [class.text-red]="a.statut !== 'TERMINE' &&
+                                  a.datePrevue && a.datePrevue < today">
+              {{ a.datePrevue | date:'dd/MM/yyyy' }}
+            </td>
+            <td>{{ a.dateReelle | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <span class="badge"
+                    [ngClass]="getActionStatutClass(a.statut)">
+                {{ getActionStatutLabel(a.statut) }}
+              </span>
+            </td>
+            <td style="font-size:11px; color:#6b7280">
+              {{ a.risqueId ? 'R' + a.risqueId : '—' }}
+            </td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-edit btn-sm"
+                        (click)="openActionEdit(a)">Modifier</button>
+                <button class="btn btn-delete btn-sm"
+                        (click)="deleteAction(a.id!)">Supprimer</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="actions.length === 0" class="empty-state">
+        Aucune action enregistrée
+      </div>
+    </div>
+
+  </div>
+</ng-container>
+
+
+
+  <!-- ── Modal Avenant ── -->
+   <div class="overlay" *ngIf="showAvenantModal" (click)="showAvenantModal = false">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+
+    <h2>{{ editingAvenantId ? 'Modifier' : 'Ajouter' }} un avenant</h2>
+
+    <!-- Identification -->
+    <div class="modal-section-title">Identification</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Numéro avenant *</label>
+        <input [(ngModel)]="avenantForm.numero" placeholder="Ex: A01">
+      </div>
+      <div class="form-row">
+        <label>Statut</label>
+        <select [(ngModel)]="avenantForm.statut">
+          <option value="EN_ATTENTE">En attente</option>
+          <option value="APPROUVE">Approuvé</option>
+          <option value="REJETE">Rejeté</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Objet de la modification *</label>
+      <input [(ngModel)]="avenantForm.objet"
+             placeholder="Ex: Extension de périmètre — Module reporting">
+    </div>
+
+    <!-- Financier -->
+   <div class="modal-section-title">Impact financier</div>
+<div class="form-grid">
+  <div class="form-row">
+    <label>Montant initial (DT)</label>
+    <input [value]="(projet?.montantTotal || projet?.budgetInitial)
+                ? ((projet?.montantTotal || projet?.budgetInitial)! | number:'1.0-2') + ' DT'
+                : '—'"
+       disabled
+       style="background:#f9fafb; color:#374151; cursor:not-allowed; font-weight:600;">
+  </div>
+  <div class="form-row">
+    <label>Nouveau montant révisé (DT) *</label>
+    <input [(ngModel)]="avenantForm.montantRevise"
+           type="number" step="0.01"
+           [placeholder]="projet?.montantTotal || 0">
+  </div>
+</div>
+
+    <!-- Preview delta -->
+    <div class="avenant-delta-preview"
+     *ngIf="avenantForm.montantRevise && projet?.montantTotal">
+  <span>Delta :</span>
+  <span class="fw-bold"
+        [style.color]="(avenantForm.montantRevise - projet!.montantTotal!) > 0
+          ? '#dc2626' : '#0f6e56'">
+    {{ (avenantForm.montantRevise - projet!.montantTotal!) > 0 ? '+' : '' }}
+    {{ (avenantForm.montantRevise - projet!.montantTotal!) | number:'1.0-2' }} DT
+  </span>
+  <span style="font-size:11px; color:#9ca3af; margin-left:auto">
+    {{ (avenantForm.montantRevise - projet!.montantTotal!) > 0
+      ? 'Augmentation du budget'
+      : 'Réduction du budget' }}
+  </span>
+</div>
+
+    <!-- Délais -->
+    <div class="modal-section-title">Impact délais</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Impact délais (jours)</label>
+        <input [(ngModel)]="avenantForm.impactDelais"
+               type="number"
+               placeholder="Ex: +30 (prolongation) ou -15 (réduction)">
+        <small class="form-hint">
+          Valeur positive = prolongation · Valeur négative = réduction
+        </small>
+      </div>
+      <div class="form-row">
+        <label>Date d'effet</label>
+        <input [(ngModel)]="avenantForm.dateEffet" type="date">
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Date de signature</label>
+        <input [(ngModel)]="avenantForm.dateSignature" type="date">
+      </div>
+    </div>
+
+    <!-- Commentaire -->
+    <div class="modal-section-title">Commentaire</div>
+    <div class="form-row">
+      <textarea [(ngModel)]="avenantForm.commentaire"
+                rows="3"
+                placeholder="Contexte, justification de l'avenant...">
+      </textarea>
+    </div>
+
+    <!-- Info si approuvé -->
+    <div class="info-banner"
+         style="background:#f0fdf4; border-color:#9fe1cb; color:#0f6e56"
+         *ngIf="avenantForm.statut === 'APPROUVE'">
+      Cet avenant sera <strong>appliqué immédiatement</strong> sur le projet :
+      montant total et date de fin mis à jour automatiquement.
+    </div>
+    <div class="info-banner" *ngIf="avenantForm.statut === 'EN_ATTENTE'">
+      Avenant en attente — aucun effet sur le projet tant qu'il n'est pas approuvé.
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" (click)="showAvenantModal = false">Annuler</button>
+      <button class="btn btn-primary"
+              [disabled]="!avenantForm.numero || !avenantForm.objet"
+              (click)="submitAvenant()">
+        {{ editingAvenantId ? 'Enregistrer' : 'Créer l\'avenant' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+  <!-- ── Modal Estimation ── -->
+  <div class="overlay" *ngIf="showEstimationModal" (click)="showEstimationModal = false; editingEstimationId = null">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>{{ editingEstimationId ? 'Modifier' : 'Ajouter' }} une estimation</h2>
+
+      <!-- Info projet -->
+      <div class="info-calcul" *ngIf="projet">
+        <div class="calcul-row">
+          <span class="calcul-label">Projet</span>
+          <span class="calcul-val fw-bold">{{ projet.titre }}</span>
+        </div>
+        <div class="calcul-row">
+          <span class="calcul-label">Période</span>
+          <span class="calcul-val">
+            {{ (projet.dateDemarrageEffective || projet.dateDemarrage) | date:'dd/MM/yyyy' }}
+            → {{ projet.dateFinPrevu | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Mode CRÉATION : sélection du membre -->
+      <div class="form-row" *ngIf="!editingEstimationId">
+        <label>Membre (Unité : H-Jour)</label>
+        <select [(ngModel)]="estimationForm.ressourceId">
+          <option [value]="null" disabled>— Sélectionner un membre —</option>
+          <option *ngFor="let u of membresDisponiblesEstimation" [value]="u.id">
+            {{ u.prenom }} {{ u.nom }}
+            {{ getTarifHJ(u.id) ? '— ' + (getTarifHJ(u.id) | number:'1.0-2') + ' DT/j' : '— Aucun TCC' }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Mode ÉDITION : membre affiché en lecture seule -->
+      <div class="form-row" *ngIf="editingEstimationId">
+        <label>Membre</label>
+        <input type="text" [value]="estimationForm.prenom + ' ' + estimationForm.nom" disabled>
+      </div>
+
+      <!-- Charge estimée -->
+      <div class="form-row">
+        <label>Charge estimée (H-Jours) *</label>
+        <input [(ngModel)]="estimationForm.nbrJours" type="number" step="0.5" min="0" placeholder="Ex: 22">
+      </div>
+
+      <!-- Mode ÉDITION : tarif H/J éditable -->
+      <div class="form-row" *ngIf="editingEstimationId">
+        <label>Tarif H/J (DT)</label>
+        <input [(ngModel)]="estimationForm.tarifHJ" type="number" step="0.01" min="0" placeholder="Ex: 250.00">
+      </div>
+
+      <!-- Preview calcul automatique -->
+      <div class="preview-calcul" *ngIf="getCoutEstimePreview() > 0">
+        <h4>Calcul automatique</h4>
+        <div class="calcul-row">
+          <span class="calcul-label">Charge estimée</span>
+          <span class="calcul-val fw-bold">{{ estimationForm.nbrJours }} H-Jours</span>
+        </div>
+        <div class="calcul-row">
+          <span class="calcul-label">Prix unitaire (Tarif H/J)</span>
+          <span class="calcul-val">
+            <ng-container *ngIf="editingEstimationId">{{ estimationForm.tarifHJ | number:'1.0-3' }} DT/j</ng-container>
+            <ng-container *ngIf="!editingEstimationId">{{ getTarifHJ(estimationForm.ressourceId) | number:'1.0-3' }} DT/j</ng-container>
+          </span>
+        </div>
+        <div class="calcul-row calcul-total">
+          <span class="calcul-label fw-bold">Montant Total (DT)</span>
+          <span class="calcul-val fw-bold text-blue">{{ getCoutEstimePreview() | number:'1.0-2' }} DT</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" (click)="showEstimationModal = false; editingEstimationId = null">Annuler</button>
+        <button class="btn btn-primary"
+          [disabled]="!estimationForm.nbrJours || (!editingEstimationId && !estimationForm.ressourceId)"
+          (click)="submitEstimation()">
+          {{ editingEstimationId ? 'Enregistrer' : "Créer l'estimation" }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+
+  <!-- ── Modal Coût Prévisionnel ── -->
+  <div class="overlay" *ngIf="showCoutPrevModal" (click)="showCoutPrevModal = false">
+    <div class="modal modal-large" (click)="$event.stopPropagation()">
+
+      <ng-container *ngIf="!editingId">
+        <h2>Plan de charge prévisionnel</h2>
+        <div class="form-row">
+          <label>Membre affecté au projet</label>
+          <select [(ngModel)]="selectedRessourceId" (change)="onRessourceSelectChange()">
+            <option [value]="null" disabled>— Sélectionner un membre —</option>
+            <option *ngFor="let u of membresDisponiblesCoutPrev" [value]="u.id">
+              {{ u.prenom }} {{ u.nom }} — {{ getTarifHJ(u.id) | number:'1.0-3' }} DT/j
+            </option>
+          </select>
+        </div>
+        <div class="mois-grid-wrapper" *ngIf="selectedRessourceId">
+          <div class="mois-grid-header">
+            <span>Mois</span>
+            <span>Charge (jours)</span>
+            <span>Coût prévisionnel</span>
+          </div>
+          <div class="mois-grid-row" *ngFor="let m of moisProjet" [class.mois-rempli]="m.charge && m.charge > 0">
+            <span class="mois-label">{{ m.label }}</span>
+            <div class="mois-input">
+              <input [(ngModel)]="m.charge" type="number" step="0.5" min="0" max="22" placeholder="0">
+              <span class="mois-unit">j</span>
+            </div>
+            <span class="mois-cout" [class.text-orange]="m.charge && m.charge > 0">
+              {{ getCoutPrevMoisPreview(m.charge) | number:'1.0-2' }} DT
+            </span>
+          </div>
+        </div>
+        <div class="mois-total" *ngIf="selectedRessourceId && totalChargePrevu > 0">
+          <div class="total-row">
+            <span class="total-label">Total charge</span>
+            <span class="total-val fw-bold">{{ totalChargePrevu | number:'1.0-1' }} jours</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">Tarif H/J</span>
+            <span class="total-val">{{ getTarifHJ(selectedRessourceId) | number:'1.0-3' }} DT/jour</span>
+          </div>
+          <div class="total-row total-highlight">
+            <span class="total-label fw-bold">Total coût prévisionnel</span>
+            <span class="total-val fw-bold text-orange">{{ totalCoutPrevPreview | number:'1.0-2' }} DT</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" (click)="showCoutPrevModal = false">Annuler</button>
+          <button class="btn btn-primary" [disabled]="!selectedRessourceId || totalChargePrevu === 0"
+            (click)="submitCoutPrevBatch()">
+            Enregistrer le plan de charge
+          </button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="editingId">
+        <h2>Modifier le coût prévisionnel</h2>
+        <div class="form-row">
+          <label>Mois</label>
+          <input [(ngModel)]="coutPrevForm.mois" type="month">
+        </div>
+        <div class="form-row">
+          <label>Charge prévue (jours)</label>
+          <input [(ngModel)]="coutPrevForm.chargePrevuM" type="number" step="0.5" min="0" max="22">
+        </div>
+        <div class="preview-calcul" *ngIf="coutPrevForm.chargePrevuM">
+          <div class="calcul-row">
+            <span class="calcul-label">Coût prévisionnel</span>
+            <span class="calcul-val fw-bold text-orange">{{ getCoutPrevPreview() | number:'1.0-2' }} DT</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" (click)="showCoutPrevModal = false; editingId = null">Annuler</button>
+          <button class="btn btn-primary" (click)="submitCoutPrevEdit()">Enregistrer</button>
+        </div>
+      </ng-container>
+
+    </div>
+  </div>
+
+  <!-- ── Modal Supprimer ── -->
+  <div class="overlay" *ngIf="showDeleteModal" (click)="showDeleteModal = false">
+    <div class="modal modal-confirm" (click)="$event.stopPropagation()">
+      <h2>Confirmer la suppression</h2>
+      <p>Voulez-vous vraiment supprimer cet élément ?</p>
+      <div class="modal-footer" style="justify-content:center">
+        <button class="btn" (click)="showDeleteModal = false">Annuler</button>
+        <button class="btn btn-delete" (click)="submitDelete()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+  <!-- ── Modal Contrat ── -->
+   <div class="overlay" *ngIf="showContratModal" (click)="showContratModal = false">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+    <h2>{{ editingContratId ? 'Modifier' : 'Ajouter' }} un contrat</h2>
+    <div class="form-grid">
+      <div class="form-row"><label>N° Contrat</label><input [(ngModel)]="contratForm.numeroContrat" placeholder="CI 09/2024"></div>
+      <div class="form-row"><label>Montant total (DT)</label><input [(ngModel)]="contratForm.montantTotal" type="number"></div>
+    </div>
+    <div class="form-row"><label>Intitulé</label><input [(ngModel)]="contratForm.intitule"></div>
+    <div class="form-row"><label>Conditions de paiement</label><input [(ngModel)]="contratForm.conditionsPaiement"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Date signature</label><input [(ngModel)]="contratForm.dateSignature" type="date"></div>
+      <div class="form-row"><label>Date échéance</label><input [(ngModel)]="contratForm.dateEcheance" type="date"></div>
+    </div>
+
+    <!-- Livrables — uniquement à la création du contrat -->
+    <div *ngIf="!editingContratId" style="margin-top:1.2rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+        <strong>Livrables du contrat</strong>
+        <button type="button" class="btn btn-secondary" (click)="addContratLivrable()">+ Livrable</button>
+      </div>
+      <div *ngFor="let l of contratNouveauxLivrables; let i = index" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;">
+        <input style="width:50px;" type="number" [(ngModel)]="l.numero" min="1" placeholder="N°">
+        <input style="flex:2;min-width:150px;" [(ngModel)]="l.designation" placeholder="Désignation *">
+        <input style="flex:1;min-width:100px;" [(ngModel)]="l.phase" placeholder="Phase">
+        <input style="width:140px;" type="date" [(ngModel)]="l.dateLivraisonPrevue">
+        <button type="button" class="btn btn-danger btn-sm" (click)="removeContratLivrable(i)">Retirer</button>
+      </div>
+      <div *ngIf="contratNouveauxLivrables.length === 0" style="font-size:0.85rem;color:#888;">Aucun livrable ajouté.</div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" (click)="showContratModal = false">Annuler</button>
+      <button class="btn btn-primary" (click)="submitContrat()">{{ editingContratId ? 'Enregistrer' : 'Créer' }}</button>
+    </div>
+  </div>
+</div>
+
+<!── Modal Échéance de facturation ── -->
+
+<div class="overlay" *ngIf="showEcheanceModal" (click)="showEcheanceModal = false">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+    <h2>{{ editingEcheanceId ? 'Modifier' : 'Ajouter' }} une échéance</h2>
+    <div class="form-grid">
+      <div class="form-row"><label>N°</label><input [(ngModel)]="echeanceForm.numero" type="number"></div>
+      <div class="form-row"><label>% Facturation</label><input [(ngModel)]="echeanceForm.pourcentage" type="number" step="0.01" min="0" max="1" placeholder="0.10 = 10%"></div>
+    </div>
+    <div class="form-row"><label>Objet</label><input [(ngModel)]="echeanceForm.objet" placeholder="Ex: Avance au démarrage"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Montant prévu (DT)</label><input [(ngModel)]="echeanceForm.montantPrevu" type="number"></div>
+      <div class="form-row"><label>Montant facturé (DT)</label><input [(ngModel)]="echeanceForm.montantFacture" type="number"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label>Date initiale</label><input [(ngModel)]="echeanceForm.dateInitiale" type="date"></div>
+      <div class="form-row"><label>Date prév. actualisée</label><input [(ngModel)]="echeanceForm.datePrevActualisee" type="date"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label>Date réelle</label><input [(ngModel)]="echeanceForm.dateReelle" type="date"></div>
+      <div class="form-row">
+        <label>Émise</label>
+        <select [(ngModel)]="echeanceForm.emise">
+          <option [ngValue]="false">Non</option>
+          <option [ngValue]="true">Oui</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label>Commentaire</label><input [(ngModel)]="echeanceForm.commentaire"></div>
+    <div class="modal-footer">
+      <button class="btn" (click)="showEcheanceModal = false">Annuler</button>
+      <button class="btn btn-primary" (click)="submitEcheance()">{{ editingEcheanceId ? 'Enregistrer' : 'Créer' }}</button>
+    </div>
+  </div>
+</div>
+
+<!─ Modal KPI ── -->
+
+<div class="overlay" *ngIf="showKpiModal" (click)="showKpiModal = false">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+
+    <div class="modal-kpi-header">
+      <h2>{{ editingKpiId ? 'Modifier' : 'Saisir' }} KPI mensuel</h2>
+      <span class="kpi-auto-badge">Auto-calculé depuis les données réelles</span>
+    </div>
+
+    <!-- Sélection mois -->
+    <div class="form-row">
+      <label>Mois de référence</label>
+      <input [(ngModel)]="kpiForm.mois"
+             type="month"
+             (change)="onKpiMoisChange()">
+    </div>
+
+    <!-- Loading -->
+    <div class="kpi-loading" *ngIf="kpiCalculLoading">
+      <div class="spinner"></div>
+      <span>Calcul en cours depuis les données réelles...</span>
+    </div>
+
+    <div *ngIf="!kpiCalculLoading">
+
+      <!-- Saisie manuelle -->
+      <div class="kpi-section kpi-section-manual">
+        <div class="kpi-section-title">Saisie chef de projet</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Earned Value % (0 → 1) *</label>
+            <input [(ngModel)]="kpiForm.earnedValue"
+                   type="number" step="0.01" min="0" max="1"
+                   placeholder="Ex: 0.75 = 75%"
+                   (change)="onEVChange()">
+            <small class="form-hint">% de travail réellement accompli</small>
+          </div>
+          <div class="form-row">
+            <label>Faits Marquants</label>
+            <textarea [(ngModel)]="kpiForm.faitsMarquants"
+                      rows="3"
+                      placeholder="Ex: Phase de recette en cours...">
+            </textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Données auto-calculées -->
+      <div class="kpi-section kpi-section-auto">
+        <div class="kpi-section-title">Calculés automatiquement</div>
+
+        <!-- Taux d'avancement -->
+        <div class="kpi-subsection">
+          <p class="kpi-subsection-title">Taux d'avancement</p>
+          <div class="kpi-auto-grid">
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Delivery</span>
+              <span class="kpi-auto-val text-blue">
+                {{ ((kpiForm.delivery || 0) * 100) | number:'1.0-0' }}%
+              </span>
+              <small>← Livrables</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Consomm. délais</span>
+              <span class="kpi-auto-val">
+                {{ ((kpiForm.consommationDelais || 0) * 100) | number:'1.0-0' }}%
+              </span>
+              <small>← Dates projet</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Taux facturation</span>
+              <span class="kpi-auto-val text-green">
+                {{ ((kpiForm.tauxFacturation || 0) * 100) | number:'1.0-0' }}%
+              </span>
+              <small>← Echéances émises</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charges HJ -->
+        <div class="kpi-subsection">
+          <p class="kpi-subsection-title">Charges H-Jours</p>
+          <div class="kpi-auto-grid">
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Prévu mois</span>
+              <span class="kpi-auto-val">{{ kpiForm.chargePrevueMois | number:'1.0-1' }} HJ</span>
+              <small>← CoutPrev</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Consommé mois</span>
+              <span class="kpi-auto-val text-orange">{{ kpiForm.chargeConsommeeMois | number:'1.0-1' }} HJ</span>
+              <small>← Pointages</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Cumulé total</span>
+              <span class="kpi-auto-val fw-bold">{{ kpiForm.chargeConsommeeCumul | number:'1.0-1' }} HJ</span>
+              <small>← Σ Pointages</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">RAF ETC</span>
+              <span class="kpi-auto-val">{{ kpiForm.resteAFaireETC | number:'1.0-1' }} HJ</span>
+              <small>Estimé - Cumulé</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">RAF EAC</span>
+              <span class="kpi-auto-val">{{ kpiForm.resteAFaireEAC | number:'1.0-1' }} HJ</span>
+              <small>ETC + Dérive</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Dérive</span>
+              <span class="kpi-auto-val"
+                    [class.text-red]="(kpiForm.derive || 0) > 0"
+                    [class.text-green]="(kpiForm.derive || 0) <= 0">
+                {{ kpiForm.derive | number:'1.0-1' }} HJ
+              </span>
+              <small>Cumulé - Attendu</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coûts -->
+        <div class="kpi-subsection">
+          <p class="kpi-subsection-title">Coûts (DT)</p>
+          <div class="kpi-auto-grid">
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Coût réel mois</span>
+              <span class="kpi-auto-val">{{ kpiForm.coutReel | number:'1.0-2' }} DT</span>
+              <small>← CoutReel</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Coût cumulé</span>
+              <span class="kpi-auto-val fw-bold text-orange">{{ kpiForm.coutReelCumul | number:'1.0-2' }} DT</span>
+              <small>← Σ CoutReel</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Coût ETC</span>
+              <span class="kpi-auto-val">{{ kpiForm.coutETC | number:'1.0-2' }} DT</span>
+              <small>RAF × TarifHJ</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Coût EAC</span>
+              <span class="kpi-auto-val fw-bold">{{ kpiForm.coutEAC | number:'1.0-2' }} DT</span>
+              <small>Cumulé + ETC</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- CA + Marges (visible après saisie EV) -->
+        <div class="kpi-subsection" *ngIf="kpiForm.earnedValue">
+          <p class="kpi-subsection-title">CA & Marges (DT)</p>
+          <div class="kpi-auto-grid">
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">CA Facturé</span>
+              <span class="kpi-auto-val text-green fw-bold">{{ kpiForm.caFacture | number:'1.0-2' }} DT</span>
+              <small>← Echéances émises</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">CA Production</span>
+              <span class="kpi-auto-val text-blue fw-bold">{{ kpiForm.caProduction | number:'1.0-2' }} DT</span>
+              <small>Montant × EV%</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Stock FAE</span>
+              <span class="kpi-auto-val">{{ kpiForm.stock | number:'1.0-2' }} DT</span>
+              <small>CA Prod - CA Fact</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Marge actuelle</span>
+              <span class="kpi-auto-val fw-bold"
+                    [class.text-green]="(kpiForm.margeNetteActuelle || 0) > 0"
+                    [class.text-red]="(kpiForm.margeNetteActuelle || 0) <= 0">
+                {{ kpiForm.margeNetteActuelle | number:'1.0-2' }} DT
+              </span>
+              <small>CA Prod - Coût cumulé</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Marge EAC</span>
+              <span class="kpi-auto-val fw-bold"
+                    [class.text-green]="(kpiForm.margeNetteEAC || 0) > 0"
+                    [class.text-red]="(kpiForm.margeNetteEAC || 0) <= 0">
+                {{ kpiForm.margeNetteEAC | number:'1.0-2' }} DT
+              </span>
+              <small>Montant - Coût EAC</small>
+            </div>
+            <div class="kpi-auto-item">
+              <span class="kpi-auto-label">Marge EAC %</span>
+              <span class="kpi-auto-val fw-bold"
+                    [class.text-green]="(kpiForm.margeNetteEACPct || 0) > 0.2"
+                    [class.text-red]="(kpiForm.margeNetteEACPct || 0) <= 0.1">
+                {{ ((kpiForm.margeNetteEACPct || 0) * 100) | number:'1.0-1' }}%
+              </span>
+              <small>Marge / Montant</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hint si EV pas saisi -->
+        <div class="kpi-ev-hint" *ngIf="!kpiForm.earnedValue">
+          ℹ️ Saisissez l'<strong>Earned Value</strong> ci-dessus pour calculer
+          le CA Production, Stock FAE et les Marges.
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" (click)="showKpiModal = false">Annuler</button>
+      <button class="btn btn-primary"
+              [disabled]="!kpiForm.mois || kpiCalculLoading"
+              (click)="submitKpi()">
+        {{ editingKpiId ? 'Enregistrer' : 'Créer le KPI' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+
+  <!-- ── Modal Coût Livrable ── -->
+
+  <div class="overlay" *ngIf="showLivrableModal" (click)="showLivrableModal = false">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+    <h2>Confirmer la livraison</h2>
+
+    <!-- Infos en lecture seule -->
+    <div style="background:#f5f5f5;border-radius:6px;padding:0.8rem 1rem;margin-bottom:1rem;">
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+        <div><span style="font-size:0.8rem;color:#888;">N°</span><br><strong>{{ livrableForm.numero }}</strong></div>
+        <div style="flex:2;min-width:140px;"><span style="font-size:0.8rem;color:#888;">Désignation</span><br><strong>{{ livrableForm.designation }}</strong></div>
+        <div><span style="font-size:0.8rem;color:#888;">Phase</span><br><strong>{{ livrableForm.phase || '—' }}</strong></div>
+        <div><span style="font-size:0.8rem;color:#888;">Date prévue</span><br><strong>{{ livrableForm.dateLivraisonPrevue || '—' }}</strong></div>
+      </div>
+    </div>
+
+    <!-- Champs éditables : statut de livraison -->
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Réalisé ?</label>
+        <select [(ngModel)]="livrableForm.realise">
+          <option [ngValue]="false">Non</option>
+          <option [ngValue]="true">Oui</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Livré au client ?</label>
+        <select [(ngModel)]="livrableForm.livre">
+          <option [ngValue]="false">Non</option>
+          <option [ngValue]="true">Oui</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Date de livraison réelle</label>
+      <input [(ngModel)]="livrableForm.dateLivraisonReelle" type="date">
+    </div>
+
+    <div class="form-row">
+      <label>Commentaire</label>
+      <input [(ngModel)]="livrableForm.commentaire" placeholder="Ex: Livré avec 4 jours de retard">
+    </div>
+
+    <!-- Preview écart -->
+    <div class="preview-calcul" *ngIf="livrableForm.dateLivraisonPrevue && livrableForm.dateLivraisonReelle">
+      <div class="calcul-row">
+        <span class="calcul-label">Écart calculé automatiquement</span>
+        <span class="calcul-val fw-bold" [style.color]="calcEcartJours() > 0 ? '#dc2626' : '#0f6e56'">
+          {{ calcEcartJours() > 0 ? '+' : '' }}{{ calcEcartJours() }} jours
+        </span>
+      </div>
+      <div class="calcul-row">
+        <span class="calcul-label">Delivery</span>
+        <span class="calcul-val fw-bold" [class.text-green]="livrableForm.livre" [class.text-muted]="!livrableForm.livre">
+          {{ livrableForm.livre ? '100%' : '0%' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" (click)="showLivrableModal = false">Annuler</button>
+      <button class="btn btn-primary" (click)="submitLivrable()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+  <!-- ── Modal RISQUE ── -->
+   <div class="overlay" *ngIf="showRisqueModal" (click)="showRisqueModal = false">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+    <h2>{{ editingRisqueId ? 'Modifier' : 'Ajouter' }} un risque</h2>
+
+    <div class="modal-section-title">Identification</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Code *</label>
+        <input [(ngModel)]="risqueForm.code" placeholder="Ex: R01">
+      </div>
+      <div class="form-row">
+        <label>Catégorie</label>
+        <select [(ngModel)]="risqueForm.categorie">
+          <option value="TECHNIQUE">Technique</option>
+          <option value="PLANNING">Planning</option>
+          <option value="FINANCIER">Financier</option>
+          <option value="HUMAIN">Humain</option>
+          <option value="AUTRE">Autre</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Description du risque *</label>
+      <input [(ngModel)]="risqueForm.description"
+             placeholder="Ex: Retard dans la livraison des spécifications">
+    </div>
+
+    <div class="modal-section-title">Évaluation</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Probabilité (1-5)</label>
+        <select [(ngModel)]="risqueForm.probabilite">
+          <option [ngValue]="1">1 — Très faible</option>
+          <option [ngValue]="2">2 — Faible</option>
+          <option [ngValue]="3">3 — Modérée</option>
+          <option [ngValue]="4">4 — Élevée</option>
+          <option [ngValue]="5">5 — Très élevée</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Impact (1-5)</label>
+        <select [(ngModel)]="risqueForm.impact">
+          <option [ngValue]="1">1 — Négligeable</option>
+          <option [ngValue]="2">2 — Mineur</option>
+          <option [ngValue]="3">3 — Modéré</option>
+          <option [ngValue]="4">4 — Majeur</option>
+          <option [ngValue]="5">5 — Critique</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Criticité auto -->
+    <div class="avenant-delta-preview"
+         *ngIf="risqueForm.probabilite && risqueForm.impact">
+      <span>Criticité calculée :</span>
+      <span class="fw-bold"
+            [style.color]="(risqueForm.probabilite * risqueForm.impact) >= 15
+              ? '#dc2626' :
+              (risqueForm.probabilite * risqueForm.impact) >= 8
+              ? '#f59e0b' : '#0f6e56'">
+        {{ risqueForm.probabilite * risqueForm.impact }} / 25
+        — {{ getCriticiteLabel(risqueForm.probabilite * risqueForm.impact) }}
+      </span>
+    </div>
+
+    <div class="modal-section-title">Mitigation</div>
+    <div class="form-row">
+      <label>Mesures de mitigation</label>
+      <textarea [(ngModel)]="risqueForm.mesuresMitigation"
+                rows="3"
+                placeholder="Ex: Réunion hebdomadaire avec le client...">
+      </textarea>
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Statut</label>
+        <select [(ngModel)]="risqueForm.statut">
+          <option value="IDENTIFIE">Identifié</option>
+          <option value="EN_COURS">En cours</option>
+          <option value="MITIGE">Mitigé</option>
+          <option value="CLOS">Clos</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Date d'échéance</label>
+        <input [(ngModel)]="risqueForm.dateEcheance" type="date">
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" (click)="showRisqueModal = false">Annuler</button>
+      <button class="btn btn-primary"
+              [disabled]="!risqueForm.code || !risqueForm.description"
+              (click)="submitRisque()">
+        {{ editingRisqueId ? 'Enregistrer' : 'Créer le risque' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!--MODAL ACTION-->
+<div class="overlay" *ngIf="showActionModal" (click)="showActionModal = false">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+    <h2>{{ editingActionId ? 'Modifier' : 'Ajouter' }} une action</h2>
+
+    <div class="modal-section-title">Identification</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Code *</label>
+        <input [(ngModel)]="actionForm.code" placeholder="Ex: A01">
+      </div>
+      <div class="form-row">
+        <label>Type d'action</label>
+        <select [(ngModel)]="actionForm.typeAction">
+          <option value="CORRECTIVE">Corrective</option>
+          <option value="PREVENTIVE">Préventive</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Description *</label>
+      <input [(ngModel)]="actionForm.description"
+             placeholder="Ex: Mettre en place des réunions de suivi hebdomadaires">
+    </div>
+
+    <div class="modal-section-title">Responsabilité</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Responsable *</label>
+        <input [(ngModel)]="actionForm.responsable"
+               placeholder="Ex: Chef de projet">
+      </div>
+      <div class="form-row">
+        <label>Risque lié (optionnel)</label>
+        <select [(ngModel)]="actionForm.risqueId">
+          <option [ngValue]="null">— Aucun —</option>
+          <option *ngFor="let r of risques" [ngValue]="r.id">
+            {{ r.code }} — {{ r.description | slice:0:40 }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-section-title">Planification</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Date prévue</label>
+        <input [(ngModel)]="actionForm.datePrevue" type="date">
+      </div>
+      <div class="form-row">
+        <label>Date réelle</label>
+        <input [(ngModel)]="actionForm.dateReelle" type="date">
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Statut</label>
+      <select [(ngModel)]="actionForm.statut">
+        <option value="A_FAIRE">À faire</option>
+        <option value="EN_COURS">En cours</option>
+        <option value="TERMINE">Terminé</option>
+        <option value="ANNULE">Annulé</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Commentaire</label>
+      <textarea [(ngModel)]="actionForm.commentaire" rows="2"
+                placeholder="Remarques..."></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" (click)="showActionModal = false">Annuler</button>
+      <button class="btn btn-primary"
+              [disabled]="!actionForm.code || !actionForm.description"
+              (click)="submitAction()">
+        {{ editingActionId ? 'Enregistrer' : 'Créer l\'action' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Toast -->
+  <div class="toast" *ngIf="toast.visible" [class.toast-error]="toast.type === 'error'">
+    {{ toast.message }}
+  </div>
+
+</div>

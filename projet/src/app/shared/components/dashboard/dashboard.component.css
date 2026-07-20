@@ -1,0 +1,145 @@
+/* ============================================================
+   Dashboard ST2I — styles
+   ============================================================ */
+
+:host {
+  --c-primary:    #185FA5;
+  --c-text:       var(--st-text-1);
+  --c-muted:      var(--st-text-muted);
+  --c-faint:      var(--st-text-faint);
+  --c-border:     var(--st-border);
+  --c-bg:         var(--st-bg);
+  --c-card:       var(--st-surface);
+  --shadow:       0 1px 20px var(--st-shadow);
+  --shadow-hover: 0 8px 24px -6px rgba(15,23,42,0.18);
+  --radius:       14px;
+  display: block;
+}
+
+.db-page {
+  padding: 22px 26px 40px;
+  background: var(--c-bg);
+  min-height: 100%;
+  color: var(--c-text);
+}
+
+/* ---------- Header ---------- */
+.db-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.db-title { font-size: 22px; font-weight: 700; letter-spacing: -.3px; margin: 0; }
+.db-sub   { font-size: 13px; color: var(--c-muted); margin: 4px 0 0; }
+
+/* ---------- Filtre projet (dans le header) ---------- */
+.db-filter { display: flex; align-items: center; gap: 10px; }
+.filter-lbl { font-size: 13px; font-weight: 600; color: var(--c-muted); }
+.select-wrap { position: relative; }
+.filter-select {
+  appearance: none; -webkit-appearance: none;
+  padding: 10px 40px 10px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  font-size: 13.5px; font-weight: 500;
+  color: var(--c-text);
+  background: var(--c-card);
+  min-width: 220px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.filter-select:hover  { border-color: var(--st-border-2); }
+.filter-select:focus  { outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 3px rgba(24,95,165,.12); }
+.select-wrap::after {
+  content: ""; position: absolute; right: 16px; top: 50%;
+  width: 8px; height: 8px;
+  border-right: 2px solid var(--c-muted); border-bottom: 2px solid var(--c-muted);
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+
+/* ---------- KPI grid (cartes pleines couleur) ---------- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.kpi-card {
+  display: flex; align-items: center; gap: 14px;
+  border: none; border-radius: var(--radius);
+  padding: 18px; color: #fff;
+  box-shadow: var(--shadow);
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.kpi-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+
+/* 🎨 Couleurs ST2I */
+.kpi-c1 { background: linear-gradient(135deg, #1E6FBF, #185FA5); }
+.kpi-c2 { background: linear-gradient(135deg, #0F5A93, #0C447C); }
+.kpi-c3 { background: linear-gradient(135deg, #2C7BE5, #1E6FBF); }
+.kpi-c4 { background: linear-gradient(135deg, #D0473A, #B5392C); }
+
+.kpi-icon {
+  width: 46px; height: 46px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  background: rgba(255,255,255,.20); color: #fff;
+}
+.ic-kpi { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.kpi-body { min-width: 0; }
+.kpi-lbl  { font-size: 12px; color: rgba(255,255,255,.85); margin: 0; font-weight: 500; }
+.kpi-val  { font-size: 23px; font-weight: 700; color: #fff; margin: 4px 0 0; line-height: 1.1; letter-spacing: -.5px; }
+.kpi-unit { font-size: 14px; font-weight: 600; color: rgba(255,255,255,.75); }
+.kpi-trend{ font-size: 11.5px; margin: 4px 0 0; color: rgba(255,255,255,.8); }
+
+/* ---------- Grilles de graphiques ---------- */
+.charts-row    { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.charts-row-13 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
+.charts-row .chart-card,
+.charts-row-13 .chart-card { margin-bottom: 0; }
+
+/* ---------- Carte graphique ---------- */
+.chart-card {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+.chart-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--c-border);
+}
+.chart-title { font-size: 14px; font-weight: 600; color: var(--c-text); }
+
+/* ---------- Chips ---------- */
+.chip       { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+.chip-blue  { background: #E8F1FB; color: #0C447C; }
+.chip-green { background: #E6F4EC; color: #3B6D11; }
+.chip-amber { background: #FBF0DE; color: #854F0B; }
+.chip-red   { background: #FBE9E9; color: #A32D2D; }
+
+/* ---------- Iframe Metabase ---------- */
+.chart-body { overflow: hidden; }
+.mb-iframe {
+  width: 100%;
+  height: calc(100% + 60px);
+  border: none;
+  display: block;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1200px) {
+  .kpi-grid      { grid-template-columns: repeat(2, 1fr); }
+  .charts-row-13 { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .db-page   { padding: 16px; }
+  .db-header { flex-direction: column; align-items: flex-start; }
+  .kpi-grid, .charts-row { grid-template-columns: 1fr; }
+}

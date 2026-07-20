@@ -1,0 +1,96 @@
+<div class="chat-container">
+
+  <!-- En-tête -->
+  <div class="chat-header">
+    <div class="chat-header-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3.25C7.16751 3.25 3.25 6.85817 3.25 11.25C3.25 13.1096 3.93493 14.8184 5.08056 16.1852C5.24759 16.3844 5.31431 16.6494 5.26126 16.9042L4.71636 19.5228C4.63008 19.9375 5.03645 20.2833 5.42535 20.1265L8.36512 18.9421C8.55155 18.8669 8.75908 18.8608 8.94957 18.9251C9.90079 19.2469 10.9285 19.4166 12 19.4166C14.6357 19.4166 17.0111 18.3901 18.7238 16.7261C20.4321 15.0663 21.5 12.7898 21.5 10.25L21.4938 10.0034C21.3689 6.02397 17.7245 3.25 12 3.25ZM4.75 11.25C4.75 7.62735 8.06767 4.75 12 4.75C17.1755 4.75 19.9138 7.20952 19.9954 10.0426L20 10.25C20 12.3699 19.0821 14.2793 17.6801 15.6444C16.2734 17.014 14.2432 18.9166 12 18.9166C11.0731 18.9166 10.1836 18.7686 9.36044 18.4936C8.90083 18.3388 8.40325 18.3506 7.95245 18.5322L6.05 19.303L6.43356 17.1876C6.55345 16.5266 6.36707 15.8659 5.95269 15.3596C4.98105 14.1785 4.75 12.7473 4.75 11.25Z" fill="currentColor"/>
+        <circle cx="8" cy="11" r="1" fill="currentColor"/>
+        <circle cx="12" cy="11" r="1" fill="currentColor"/>
+        <circle cx="16" cy="11" r="1" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="chat-header-text">
+      <h3>Assistant IA</h3>
+      <span>Suivi financier des projets</span>
+    </div>
+    <button
+      *ngIf="messages.length > 0"
+      type="button"
+      class="btn-clear"
+      (click)="nouvelleConversation()"
+      title="Nouvelle conversation">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 4V9H4.58152M19.9381 11C19.446 7.05369 16.0796 4 12 4C8.64262 4 5.76829 6.06817 4.58152 9M4.58152 9H9M20 20V15H19.4185M19.4185 15C18.2317 17.9318 15.3574 20 12 20C7.92038 20 4.55399 16.9463 4.06189 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Nouvelle conversation</span>
+    </button>
+  </div>
+
+  <!-- Corps du chat -->
+  <div class="messages">
+
+    <!-- État vide -->
+    <div *ngIf="messages.length === 0 && !loading" class="empty-state">
+      <div class="empty-state-icon">💬</div>
+      <p>Posez une question sur vos projets</p>
+      <span>Budget, marges, statut, coûts réels... l'assistant s'appuie sur vos données de suivi financier.</span>
+    </div>
+
+    <!-- Liste des messages -->
+    <div
+      *ngFor="let msg of messages"
+      class="msg-row"
+      [ngClass]="msg.role === 'user' ? 'msg-row-user' : 'msg-row-assistant'">
+
+      <div class="avatar" [ngClass]="msg.role === 'user' ? 'avatar-user' : 'avatar-assistant'">
+        <span *ngIf="msg.role === 'user'">V</span>
+        <svg *ngIf="msg.role !== 'user'" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3.25C7.16751 3.25 3.25 6.85817 3.25 11.25C3.25 13.1096 3.93493 14.8184 5.08056 16.1852C5.24759 16.3844 5.31431 16.6494 5.26126 16.9042L4.71636 19.5228C4.63008 19.9375 5.03645 20.2833 5.42535 20.1265L8.36512 18.9421C8.55155 18.8669 8.75908 18.8608 8.94957 18.9251C9.90079 19.2469 10.9285 19.4166 12 19.4166C14.6357 19.4166 17.0111 18.3901 18.7238 16.7261C20.4321 15.0663 21.5 12.7898 21.5 10.25L21.4938 10.0034C21.3689 6.02397 17.7245 3.25 12 3.25Z" fill="currentColor"/>
+        </svg>
+      </div>
+
+      <div class="bubble" [ngClass]="msg.role === 'user' ? 'bubble-user' : 'bubble-assistant'">
+        <p>{{ msg.content }}</p>
+      </div>
+    </div>
+
+    <!-- Indicateur de saisie -->
+    <div *ngIf="loading" class="msg-row msg-row-assistant">
+      <div class="avatar avatar-assistant">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3.25C7.16751 3.25 3.25 6.85817 3.25 11.25C3.25 13.1096 3.93493 14.8184 5.08056 16.1852C5.24759 16.3844 5.31431 16.6494 5.26126 16.9042L4.71636 19.5228C4.63008 19.9375 5.03645 20.2833 5.42535 20.1265L8.36512 18.9421C8.55155 18.8669 8.75908 18.8608 8.94957 18.9251C9.90079 19.2469 10.9285 19.4166 12 19.4166C14.6357 19.4166 17.0111 18.3901 18.7238 16.7261C20.4321 15.0663 21.5 12.7898 21.5 10.25L21.4938 10.0034C21.3689 6.02397 17.7245 3.25 12 3.25Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="bubble bubble-assistant bubble-loading">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Erreur -->
+  <div *ngIf="errorMsg" class="error-banner">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 9V13M12 17H12.01M10.29 3.86L1.82 18C1.64 18.32 1.55 18.68 1.56 19.05C1.57 19.42 1.68 19.77 1.88 20.08C2.08 20.39 2.36 20.64 2.7 20.81C3.03 20.98 3.4 21.06 3.78 21H20.22C20.6 21.06 20.97 20.98 21.3 20.81C21.64 20.64 21.92 20.39 22.12 20.08C22.32 19.77 22.43 19.42 22.44 19.05C22.45 18.68 22.36 18.32 22.18 18L13.71 3.86C13.53 3.56 13.27 3.31 12.96 3.14C12.65 2.97 12.3 2.88 11.95 2.88C11.6 2.88 11.25 2.97 10.94 3.14C10.63 3.31 10.37 3.56 10.19 3.86H10.29Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>{{ errorMsg }}</span>
+  </div>
+
+  <!-- Zone de saisie -->
+  <form (submit)="onEnter($event)" class="input-zone">
+    <input
+      type="text"
+      [(ngModel)]="question"
+      name="question"
+      placeholder="Posez une question sur vos projets..."
+      [disabled]="loading"
+      autocomplete="off" />
+    <button type="submit" [disabled]="loading || !question.trim()" class="btn-send">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </form>
+</div>

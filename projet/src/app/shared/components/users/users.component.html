@@ -1,0 +1,386 @@
+<div class="users-page">
+
+  <!-- En-tête -->
+  <app-page-header
+    title="Gestion des utilisateurs"
+    subtitle="Administration des comptes et attribution des profils">
+    <svg icon width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <button action class="btn btn-primary" *ngIf="canCreate()" (click)="openCreate()">
+      + Créer un utilisateur
+    </button>
+  </app-page-header>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-num">{{ users.length }}</span>
+      <span class="stat-label">Total utilisateurs</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num">{{ adminCount }}</span>
+      <span class="stat-label">Administrateurs</span>
+    </div>
+  </div>
+
+  <!-- Tableau -->
+  <div class="table-card">
+    <div class="search-bar">
+      <input [(ngModel)]="searchQuery" (input)="applyFilter()"
+             placeholder="Rechercher par nom, prénom ou email…">
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Email</th>
+          <th>Profils</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of filteredUsers">
+          <td>
+            <div class="user-cell">
+              <div class="avatar">{{ avatarInitials(u) }}</div>
+              <div>
+                <div class="user-name">{{ u.prenom }} {{ u.nom }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="email-cell">{{ u.email }}</td>
+          <td>
+            <span *ngFor="let p of u.profils"
+                  class="badge"
+                  [class.badge-admin]="p.code === 'ADMIN'"
+                  [class.badge-user]="p.code !== 'ADMIN'">
+              {{ p.libelle || p.nom || p.code }}
+            </span>
+            <span *ngIf="!u.profils?.length" class="badge badge-user">USER</span>
+          </td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-detail" (click)="openDetail(u)">
+                Détails
+              </button>
+              <button class="btn btn-delete" *ngIf="canDelete()" (click)="openDelete(u)">
+                Supprimer
+              </button>
+              <span *ngIf="!canDelete()" class="readonly-badge">
+                Lecture seule
+              </span>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="filteredUsers.length === 0">
+          <td colspan="4" class="empty-state">Aucun utilisateur trouvé</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Modal Détail ── -->
+  <div class="overlay" *ngIf="showDetailModal && detailUser"
+       (click)="showDetailModal = false">
+    <div class="modal modal-detail" (click)="$event.stopPropagation()">
+
+      <div class="detail-user-header">
+        <div class="detail-avatar-lg">{{ avatarInitials(detailUser) }}</div>
+        <div class="detail-user-info">
+          <h2>{{ detailUser.prenom }} {{ detailUser.nom }}</h2>
+          <p class="detail-user-email">{{ detailUser.email }}</p>
+          <div class="detail-badges">
+            <span *ngFor="let p of detailUser.profils"
+                  class="badge"
+                  [class.badge-admin]="p.code === 'ADMIN'"
+                  [class.badge-user]="p.code !== 'ADMIN'">
+              {{ p.nom || p.code }}
+            </span>
+            <span *ngIf="!detailUser.profils?.length" class="badge badge-user">USER</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section-title">Informations personnelles</div>
+      <div class="detail-info-grid">
+        <div class="detail-info-item">
+          <span class="detail-info-label">Nom complet</span>
+          <span class="detail-info-val">{{ detailUser.prenom }} {{ detailUser.nom }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="detail-info-label">Email</span>
+          <span class="detail-info-val">{{ detailUser.email }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="detail-info-label">Téléphone</span>
+          <span class="detail-info-val">{{ detailUser.telephone || '—' }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="detail-info-label">Pays</span>
+          <span class="detail-info-val">{{ detailUser.pays || '—' }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="detail-info-label">Code postal</span>
+          <span class="detail-info-val">{{ detailUser.codePostal || '—' }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="detail-info-label">Profils assignés</span>
+          <span class="detail-info-val">{{ getProfilsLabel(detailUser) }}</span>
+        </div>
+      </div>
+
+      <!-- TCC — visible seulement si canManageTCC() -->
+      <ng-container *ngIf="canManageTCC()">
+        <div class="detail-section-title">
+          Taux de Coût Complet (TCC)
+          <span class="detail-loading" *ngIf="detailLoadingTCC">Chargement...</span>
+        </div>
+
+        <div *ngIf="!detailLoadingTCC">
+          <div class="tcc-highlight" *ngIf="latestTCC">
+            <div class="tcc-highlight-item">
+              <span class="tcc-highlight-label">Année</span>
+              <span class="tcc-highlight-val">{{ latestTCC.annee | date:'yyyy' }}</span>
+            </div>
+            <div class="tcc-highlight-item">
+              <span class="tcc-highlight-label">TCC avec FG</span>
+              <span class="tcc-highlight-val text-blue">
+                {{ latestTCC.tccAvecFG | number:'1.0-3' }} DT
+              </span>
+            </div>
+            <div class="tcc-highlight-item">
+              <span class="tcc-highlight-label">Tarif H/J</span>
+              <span class="tcc-highlight-val text-green">
+                {{ latestTCC.tarifHJ | number:'1.0-3' }} DT/jour
+              </span>
+            </div>
+            <div class="tcc-highlight-item">
+              <span class="tcc-highlight-label">TCC Base</span>
+              <span class="tcc-highlight-val">
+                {{ latestTCC.tccBase | number:'1.0-3' }} DT
+              </span>
+            </div>
+          </div>
+
+          <div *ngIf="detailTCCList.length > 1">
+            <div class="detail-subsection-title">Historique</div>
+            <table class="detail-tcc-table">
+              <thead>
+                <tr>
+                  <th>Année</th>
+                  <th>TCC Base (DT)</th>
+                  <th>TCC avec FG (DT)</th>
+                  <th>Tarif H/J (DT)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let t of detailTCCList; let first = first"
+                    [class.tcc-current]="first">
+                  <td>
+                    {{ t.annee | date:'yyyy' }}
+                    <span *ngIf="first" class="current-badge">Actuel</span>
+                  </td>
+                  <td>{{ t.tccBase | number:'1.0-3' }}</td>
+                  <td class="text-blue fw-bold">{{ t.tccAvecFG | number:'1.0-3' }}</td>
+                  <td class="text-green fw-bold">{{ t.tarifHJ | number:'1.0-3' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div *ngIf="detailTCCList.length === 0" class="empty-state">
+            Aucun TCC enregistré pour cet utilisateur.
+          </div>
+        </div>
+      </ng-container>
+
+      <div class="modal-footer">
+        <button class="btn" (click)="showDetailModal = false">Fermer</button>
+        <button class="btn btn-tcc" *ngIf="canManageTCC()"
+                (click)="showDetailModal = false; openTCC(detailUser)">
+          Gérer TCC
+        </button>
+        <button class="btn btn-edit" *ngIf="canEdit()"
+                (click)="showDetailModal = false; openEdit(detailUser)">
+          Modifier
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal TCC ── -->
+<div class="overlay" *ngIf="showTCCModal" (click)="showTCCModal = false">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+
+    <h2>TCC — {{ selectedUser?.prenom }} {{ selectedUser?.nom }}</h2>
+
+    <div class="tcc-form">
+      <h3>Ajouter un TCC</h3>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Année</label>
+          <input [(ngModel)]="tccForm.annee" type="number"
+                 placeholder="ex: 2025" min="2020" max="2030">
+        </div>
+        <div class="form-row">
+          <label>TCC Base (DT)</label>
+          <input [(ngModel)]="tccForm.tccBase" type="number"
+                 placeholder="ex: 17750">
+        </div>
+        <div class="form-row">
+          <label>TCC avec FG (DT)</label>
+          <input [(ngModel)]="tccForm.tccAvecFG" type="number"
+                 placeholder="ex: 1507">
+        </div>
+      </div>
+
+      <div class="tcc-preview" *ngIf="tccForm.tccBase || tccForm.tccAvecFG">
+        <span>Tarif H/J calculé :</span>
+        <span class="tcc-tarif">{{ tarifHJPreview | number:'1.0-3' }} DT/jour</span>
+        <span class="tcc-calcul">
+          ({{ tccForm.tccBase || 0 }} + {{ tccForm.tccAvecFG || 0 }}) / 264 jours
+        </span>
+      </div>
+
+      <div class="tcc-form-actions">
+        <button class="btn btn-primary" (click)="submitTCC()">
+          + Ajouter
+        </button>
+      </div>
+    </div> 
+
+    <!-- Historique TCC — EN DEHORS de tcc-form -->
+    <div class="tcc-list">
+      <h3>Historique TCC</h3>
+      <div *ngIf="tccList.length === 0" class="empty-state">Aucun TCC enregistré</div>
+      <table *ngIf="tccList.length > 0">
+        <thead>
+          <tr>
+            <th>Année</th>
+            <th>TCC Base (DT)</th>
+            <th>TCC avec FG (DT)</th>
+            <th>Tarif H/J (DT)</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of tccList">
+            <td class="fw-bold">{{ t.annee | date:'yyyy' }}</td>
+            <td>{{ t.tccBase | number:'1.0-3' }}</td>
+            <td class="fw-bold text-blue">{{ t.tccAvecFG | number:'1.0-3' }}</td>
+            <td class="fw-bold text-green">{{ t.tarifHJ | number:'1.0-3' }}</td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-delete" *ngIf="canDeleteTCC()"
+                        (click)="deleteTCC(t.id!)">Supprimer</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" (click)="showTCCModal = false">Fermer</button>
+    </div>
+
+  </div> 
+</div> 
+
+  <!-- ── Modal Créer ── -->
+  <div class="overlay" *ngIf="showCreateModal" (click)="showCreateModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>Créer un utilisateur</h2>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Nom</label>
+          <input [(ngModel)]="createForm.nom" placeholder="Nom">
+        </div>
+        <div class="form-row">
+          <label>Prénom</label>
+          <input [(ngModel)]="createForm.prenom" placeholder="Prenom">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Email</label>
+        <input [(ngModel)]="createForm.email" type="email"
+               placeholder="nom@example.com">
+      </div>
+      <div class="form-row">
+        <label>Mot de passe</label>
+        <input [(ngModel)]="createForm.password" type="password"
+               placeholder="••••••••">
+      </div>
+      <div class="form-row">
+        <label>Profils <span class="hint">(vide = USER par défaut)</span></label>
+        <div class="profils-checkboxes">
+          <label *ngFor="let p of allProfils"
+                 class="profil-check"
+                 [class.selected]="createForm.profilCodes.includes(p.code)"
+                 (click)="toggleCreateProfil(p.code)">
+            {{ p.libelle || p.nom || p.code }}
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" (click)="showCreateModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="submitCreate()">Créer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal Modifier ── -->
+  <div class="overlay" *ngIf="showEditModal" (click)="showEditModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>Modifier l'utilisateur</h2>
+      <div class="form-grid">
+        <div class="form-row"><label>Nom</label><input [(ngModel)]="editForm.nom"></div>
+        <div class="form-row"><label>Prénom</label><input [(ngModel)]="editForm.prenom"></div>
+      </div>
+      <div class="form-row">
+        <label>Email</label>
+        <input [(ngModel)]="editForm.email" type="email">
+      </div>
+      <div class="form-row">
+        <label>Attribuer des profils</label>
+        <div class="profils-checkboxes">
+          <label *ngFor="let p of allProfils"
+                 class="profil-check"
+                 [class.selected]="isProfilSelected(p.id)"
+                 (click)="toggleEditProfil(p)">
+            {{ p.libelle || p.nom || p.code }}
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" (click)="showEditModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="submitEdit()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal Supprimer ── -->
+  <div class="overlay" *ngIf="showDeleteModal" (click)="showDeleteModal = false">
+    <div class="modal modal-confirm" (click)="$event.stopPropagation()">
+      <h2>Confirmer la suppression</h2>
+      <p>Êtes-vous sûr de vouloir supprimer
+        <strong>{{ deleteTarget?.prenom }} {{ deleteTarget?.nom }}</strong> ?
+      </p>
+      <div class="modal-footer" style="justify-content: center;">
+        <button class="btn" (click)="showDeleteModal = false">Annuler</button>
+        <button class="btn btn-delete" (click)="submitDelete()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" *ngIf="toast.visible" [class.toast-error]="toast.type === 'error'">
+    {{ toast.message }}
+  </div>
+
+</div>

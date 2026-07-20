@@ -1,0 +1,453 @@
+<div class="nomenclature-page">
+
+  <app-page-header
+    title="Nomenclatures"
+    [subtitle]="currentTab.label + ' — ' + items.length + ' enregistrement(s)'">
+    <svg icon width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+      <line x1="7" y1="7" x2="7.01" y2="7"/>
+    </svg>
+    <button action class="btn btn-primary" *ngIf="canCreate()" (click)="openCreate()">
+      + Ajouter
+    </button>
+  </app-page-header>
+
+  <!-- Onglets -->
+  <div class="nom-tabs">
+   <ng-container *ngFor="let tab of tabs">
+  <button *ngIf="canViewTab(tab.type)"
+          class="nom-tab-btn"
+          [class.active]="activeTab === tab.type"
+          (click)="setTab(tab.type)">
+    {{ tab.icon }} {{ tab.label }}
+  </button>
+</ng-container>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div><p>Chargement...</p>
+    </div>
+
+    <table *ngIf="!loading && items.length > 0">
+      <thead>
+        <tr>
+          <th style="width:50px">#</th>
+          <th style="width:120px">Code</th>
+          <th>Nom / Libellé</th>
+          <th>Détails</th>
+          <th style="width:130px">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items; let i = index">
+          <td class="text-muted">{{ i + 1 }}</td>
+          <td><span class="code-badge">{{ item.code }}</span></td>
+          <td class="fw-bold">{{ item.nom || item.libelle }}</td>
+
+          <!-- ✅ Détails selon le type -->
+          <td style="font-size:12px">
+
+            <!-- CLIENT -->
+            <ng-container *ngIf="activeTab === 'clients'">
+              <div class="detail-chips">
+                <span class="detail-chip" *ngIf="item.email">
+                  {{ item.email }}
+                </span>
+                <span class="detail-chip" *ngIf="item.telephone">
+                  {{ item.telephone }}
+                </span>
+                <span class="detail-chip" *ngIf="item.secteurActivite">
+                  {{ item.secteurActivite }}
+                </span>
+                <span class="detail-chip" *ngIf="item.pays">
+                  {{ item.pays }}
+                </span>
+                <span class="detail-chip chip-blue" *ngIf="item.matriculeFiscale">
+                  MF: {{ item.matriculeFiscale }}
+                </span>
+              </div>
+            </ng-container>
+
+            <!-- BAILLEUR -->
+            <ng-container *ngIf="activeTab === 'bailleurs'">
+              <div class="detail-chips">
+                <span class="detail-chip chip-blue" *ngIf="item.typeFinancement">
+                  {{ item.typeFinancement }}
+                </span>
+                <span class="detail-chip" *ngIf="item.email">
+                  {{ item.email }}
+                </span>
+                <span class="detail-chip" *ngIf="item.pays">
+                  {{ item.pays }}
+                </span>
+              </div>
+            </ng-container>
+
+            <!-- PARTENAIRE -->
+            <ng-container *ngIf="activeTab === 'partenaires'">
+              <div class="detail-chips">
+                <span class="detail-chip chip-green" *ngIf="item.partGroupement">
+                  {{ item.partGroupement }}%
+                </span>
+                <span class="detail-chip" *ngIf="item.email">
+                  {{ item.email }}
+                </span>
+                <span class="detail-chip" *ngIf="item.pays">
+                  {{ item.pays }}
+                </span>
+              </div>
+            </ng-container>
+
+            <!-- DEVISE -->
+            <ng-container *ngIf="activeTab === 'devises'">
+              <div class="detail-chips">
+                <span class="detail-chip chip-green" *ngIf="item.estDeviseBase">
+                  Devise de base
+                </span>
+                <span class="detail-chip chip-blue" *ngIf="!item.estDeviseBase && item.tauxChange">
+                  1 DT = {{ item.tauxChange }} {{ item.code }}
+                </span>
+                <span class="detail-chip" *ngIf="item.libelle">
+                  {{ item.libelle }}
+                </span>
+              </div>
+            </ng-container>
+
+            <!-- MODELE BUSINESS -->
+            <ng-container *ngIf="activeTab === 'modeles'">
+              <div class="detail-chips">
+                <span class="detail-chip chip-blue"
+                      *ngIf="item.typeGroupement === 'GROUPEMENT'">
+                  En groupement
+                </span>
+                <span class="detail-chip"
+                      *ngIf="item.typeGroupement === 'SEUL'">
+                  Seul
+                </span>
+                <span class="detail-chip chip-green"
+                      *ngIf="item.typeGroupement === 'GROUPEMENT'">
+                  Partenaire requis
+                </span>
+              </div>
+            </ng-container>
+
+          </td>
+
+          <td>
+            <div class="actions">
+              <button class="btn btn-edit"
+                      *ngIf="canEdit()"
+                      (click)="openEdit(item)">Modifier</button>
+              <button class="btn btn-delete"
+                      *ngIf="canDelete()"
+                      (click)="openDelete(item)">Supprimer</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="!loading && items.length === 0" class="empty-state">
+      <div style="font-size:40px; margin-bottom:12px">{{ currentTab.icon }}</div>
+      <p>Aucun(e) {{ currentTab.label }} enregistré(e)</p>
+      <button class="btn btn-primary" *ngIf="canCreate()"
+              (click)="openCreate()" style="margin-top:12px">
+        + Ajouter le premier
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════ MODALS ══════════════════ -->
+
+  <div class="overlay" *ngIf="showModal" (click)="showModal = false">
+    <div class="modal modal-large" (click)="$event.stopPropagation()">
+
+      <div class="modal-nom-header">
+        <span class="modal-nom-icon">{{ currentTab.icon }}</span>
+        <h2>{{ editingId ? 'Modifier' : 'Ajouter' }} — {{ currentTab.label | slice:0:-1 }}</h2>
+      </div>
+
+      <!-- ══ CLIENT ══ -->
+      <ng-container *ngIf="activeTab === 'clients'">
+
+        <!-- Section identité -->
+        <div class="modal-section-title">Identité</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Code *</label>
+            <input [(ngModel)]="form.code" placeholder="CLI-001">
+          </div>
+          <div class="form-row">
+            <label>Nom *</label>
+            <input [(ngModel)]="form.nom" placeholder="Ex: TUNISAIR">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Raison Sociale</label>
+          <input [(ngModel)]="form.raisonSociale"
+                 placeholder="La Société Tunisienne de l'Air">
+        </div>
+
+        <!-- Section contact -->
+        <div class="modal-section-title">Contact</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Téléphone</label>
+            <input [(ngModel)]="form.telephone" placeholder="+216 XX XXX XXX">
+          </div>
+          <div class="form-row">
+            <label>Email</label>
+            <input [(ngModel)]="form.email"
+                   type="email" placeholder="contact@client.com">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Adresse</label>
+          <input [(ngModel)]="form.adresse"
+                 placeholder="Ex: Avenue Habib Bourguiba, Tunis">
+        </div>
+
+        <!-- Section légal -->
+        <div class="modal-section-title">Informations légales</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Matricule Fiscale</label>
+            <input [(ngModel)]="form.matriculeFiscale"
+                   placeholder="Ex: 1234567A/P/M/000">
+          </div>
+          <div class="form-row">
+            <label>Registre Commerce</label>
+            <input [(ngModel)]="form.registreCommerce"
+                   placeholder="Ex: B12345432024">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Secteur d'activité</label>
+            <input [(ngModel)]="form.secteurActivite"
+                   placeholder="Ex: Transport aérien">
+          </div>
+          <div class="form-row">
+            <label>Pays</label>
+            <input [(ngModel)]="form.pays" placeholder="Tunisie">
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ══ BAILLEUR ══ -->
+      <ng-container *ngIf="activeTab === 'bailleurs'">
+        <div class="modal-section-title">Identité</div>
+        <div class="form-grid">
+          <div class="form-row"><label>Code *</label>
+            <input [(ngModel)]="form.code" placeholder="BAI-001"></div>
+          <div class="form-row"><label>Nom *</label>
+            <input [(ngModel)]="form.nom" placeholder="Ex: Banque Mondiale"></div>
+        </div>
+
+        <div class="modal-section-title">Contact</div>
+        <div class="form-grid">
+          <div class="form-row"><label>Téléphone</label>
+            <input [(ngModel)]="form.telephone"></div>
+          <div class="form-row"><label>Email</label>
+            <input [(ngModel)]="form.email" type="email"></div>
+        </div>
+        <div class="form-row"><label>Adresse</label>
+          <input [(ngModel)]="form.adresse"></div>
+
+        <div class="modal-section-title">Financement</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Type de financement</label>
+            <select [(ngModel)]="form.typeFinancement">
+              <option value="">— Sélectionner —</option>
+              <option value="DON">Don</option>
+              <option value="PRET">Prêt</option>
+              <option value="SUBVENTION">Subvention</option>
+              <option value="FONDS_PROPRES">Fonds propres</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Pays</label>
+            <input [(ngModel)]="form.pays" placeholder="Tunisie"></div>
+        </div>
+      </ng-container>
+
+      <!-- ══ PARTENAIRE ══ -->
+      <ng-container *ngIf="activeTab === 'partenaires'">
+        <div class="modal-section-title">Identité</div>
+        <div class="form-grid">
+          <div class="form-row"><label>Code *</label>
+            <input [(ngModel)]="form.code" placeholder="PAR-001"></div>
+          <div class="form-row"><label>Nom *</label>
+            <input [(ngModel)]="form.nom"></div>
+        </div>
+        <div class="form-row"><label>Raison Sociale</label>
+          <input [(ngModel)]="form.raisonSociale"></div>
+
+        <div class="modal-section-title">Contact</div>
+        <div class="form-grid">
+          <div class="form-row"><label>Téléphone</label>
+            <input [(ngModel)]="form.telephone"></div>
+          <div class="form-row"><label>Email</label>
+            <input [(ngModel)]="form.email" type="email"></div>
+        </div>
+        <div class="form-row"><label>Adresse</label>
+          <input [(ngModel)]="form.adresse"></div>
+
+        <div class="modal-section-title">Groupement</div>
+        <div class="form-grid">
+          <div class="form-row"><label>Pays</label>
+            <input [(ngModel)]="form.pays" placeholder="Tunisie"></div>
+          <div class="form-row">
+            <label>Part dans le groupement (%)</label>
+            <input [(ngModel)]="form.partGroupement"
+                   type="number" min="0" max="100"
+                   placeholder="Ex: 30">
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ══ DEVISE ══ -->
+      <ng-container *ngIf="activeTab === 'devises'">
+        <div class="modal-section-title">Devise</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Code *</label>
+            <input [(ngModel)]="form.code"
+                   placeholder="Ex: EUR, USD, DT"
+                   style="text-transform:uppercase">
+          </div>
+          <div class="form-row">
+            <label>Libellé *</label>
+            <input [(ngModel)]="form.libelle"
+                   placeholder="Ex: Euro, Dollar, Dinar Tunisien">
+          </div>
+        </div>
+
+        <div class="modal-section-title">Taux de change</div>
+        <div class="form-row">
+          <label>Type de devise</label>
+          <select [(ngModel)]="form.estDeviseBase"
+                  (change)="onDeviseBaseChange()">
+            <option [ngValue]="true">Devise de base (DT — taux = 1)</option>
+            <option [ngValue]="false">Devise étrangère (saisir taux)</option>
+          </select>
+        </div>
+
+        <div *ngIf="!form.estDeviseBase">
+          <div class="form-row">
+            <label>Taux de change (1 DT = X {{ form.code || '?' }})</label>
+            <input [(ngModel)]="form.tauxChange"
+                   type="number" step="0.0001" min="0.0001"
+                   placeholder="Ex: 0.29">
+          </div>
+          <div class="devise-calc" *ngIf="form.tauxChange">
+            <div class="devise-calc-row">
+              <span>1 DT</span>
+              <span class="devise-calc-arrow">→</span>
+              <span class="fw-bold">{{ form.tauxChange }} {{ form.code }}</span>
+            </div>
+            <div class="devise-calc-row">
+              <span>1 {{ form.code }}</span>
+              <span class="devise-calc-arrow">→</span>
+              <span class="fw-bold">{{ tauxInverseDT }} DT</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-banner" *ngIf="form.estDeviseBase">
+          Devise de base — Taux fixé à 1.0 automatiquement
+        </div>
+      </ng-container>
+
+      <!-- ══ MODELE BUSINESS ══ -->
+      <ng-container *ngIf="activeTab === 'modeles'">
+        <div class="modal-section-title">Identification</div>
+        <div class="form-grid">
+          <div class="form-row"><label>Code *</label>
+            <input [(ngModel)]="form.code" placeholder="Ex: FP-SEUL"></div>
+          <div class="form-row"><label>Libellé *</label>
+            <input [(ngModel)]="form.libelle"
+                   placeholder="Ex: Forfait Prix Seul"></div>
+        </div>
+
+        <div class="modal-section-title">Type de groupement *</div>
+        <div class="radio-group">
+          <label class="radio-option"
+                 [class.radio-active]="form.typeGroupement === 'SEUL'">
+            <input type="radio" [(ngModel)]="form.typeGroupement"
+                   value="SEUL" (change)="onTypeGroupementChange()">
+            <span class="radio-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <div>
+              <span class="radio-label">Seul</span>
+              <span class="radio-desc">
+                ST2I intervient seul — pas de partenaire requis
+              </span>
+            </div>
+          </label>
+          <label class="radio-option"
+                 [class.radio-active]="form.typeGroupement === 'GROUPEMENT'">
+            <input type="radio" [(ngModel)]="form.typeGroupement"
+                   value="GROUPEMENT" (change)="onTypeGroupementChange()">
+            <span class="radio-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+            <div>
+              <span class="radio-label">En groupement</span>
+              <span class="radio-desc">
+                ST2I + partenaire(s) — partenaire obligatoire dans le projet
+              </span>
+            </div>
+          </label>
+        </div>
+
+        <div class="info-banner"
+             style="background:#f0fdf4; border-color:#9fe1cb; color:#0f6e56; margin-top:12px"
+             *ngIf="form.typeGroupement === 'GROUPEMENT'">
+          Le champ <strong>Partenaire</strong> sera
+          <strong>obligatoire</strong> lors de la création d'un projet.
+        </div>
+        <div class="info-banner" style="margin-top:12px"
+             *ngIf="form.typeGroupement === 'SEUL'">
+          Le champ <strong>Partenaire</strong> sera
+          <strong>masqué</strong> lors de la création d'un projet.
+        </div>
+      </ng-container>
+
+      <div class="modal-footer">
+        <button class="btn" (click)="showModal = false">Annuler</button>
+        <button class="btn btn-primary"
+                [disabled]="!formValide"
+                (click)="submitForm()">
+          {{ editingId ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Supprimer -->
+  <div class="overlay" *ngIf="showDeleteModal" (click)="showDeleteModal = false">
+    <div class="modal modal-confirm" (click)="$event.stopPropagation()">
+      <div style="margin-bottom:12px; color:#9ca3af">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </div>
+      <h2>Confirmer la suppression</h2>
+      <p>Supprimer <strong>{{ deleteTarget?.nom || deleteTarget?.libelle }}</strong> ?</p>
+      <p style="font-size:12px; color:#9ca3af">Cette action est irréversible.</p>
+      <div class="modal-footer" style="justify-content:center">
+        <button class="btn" (click)="showDeleteModal = false">Annuler</button>
+        <button class="btn btn-delete" (click)="submitDelete()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" *ngIf="toast.visible"
+       [class.toast-error]="toast.type === 'error'">
+    {{ toast.message }}
+  </div>
+
+</div>

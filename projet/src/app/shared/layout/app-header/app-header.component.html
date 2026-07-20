@@ -1,0 +1,45 @@
+<header
+  class="sticky top-0 flex w-full z-40 transition-all duration-200 st-header">
+
+  <div class="flex items-center justify-between w-full px-4 py-3 xl:px-6">
+
+    <!-- LEFT -->
+    <div class="flex items-center gap-3">
+
+      <!-- Toggle button -->
+      <button
+        class="flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 st-toggle-btn"
+        (click)="handleToggle()">
+        @if (isMobileOpen$ | async) {
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6L18 18M6 18L18 6"
+              stroke="var(--st-text-2)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        } @else {
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6H20M4 12H20M4 18H14"
+              stroke="var(--st-text-2)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        }
+      </button>
+
+      <!-- Breadcrumb -->
+      <div class="hidden xl:flex items-center gap-2">
+        <span class="st-breadcrumb-sep">ST2I</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18l6-6-6-6" stroke="var(--st-border-2)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="st-breadcrumb-active">{{ pageTitle }}</span>
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="flex items-center gap-2">
+      <app-theme-toggle-button />
+      <app-notification-dropdown />
+      <app-user-dropdown />
+    </div>
+
+  </div>
+</header>

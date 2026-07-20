@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: st2i
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081/realms/st2i-realm
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/st2i_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.MySQLDialect
+
+server:
+  port: 8080
+
+ollama:
+  base-url: https://ollama.hacloud.fr
+  model: llama3.1:8b
+  embed-model: nomic-embed-text
+
