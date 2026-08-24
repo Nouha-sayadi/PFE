@@ -2,6 +2,7 @@ package com.example.st2i.RestController;
 
 import com.example.st2i.Entities.Devise;
 import com.example.st2i.Repositories.DeviseRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,12 +29,12 @@ public class DeviseController {
     }
 
     @PostMapping
-    public Devise create(@RequestBody Devise devise) {
+    public Devise create(@Valid @RequestBody Devise devise) {
         return deviseRepository.save(devise);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Devise> update(@PathVariable Long id, @RequestBody Devise devise) {
+    public ResponseEntity<Devise> update(@PathVariable Long id, @Valid @RequestBody Devise devise) {
         if (!deviseRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }

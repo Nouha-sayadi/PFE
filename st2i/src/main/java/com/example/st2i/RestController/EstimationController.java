@@ -3,6 +3,7 @@ package com.example.st2i.RestController;
 import com.example.st2i.DTO.EstimationRequest;
 import com.example.st2i.DTO.EstimationResponse;
 import com.example.st2i.Services.EstimationService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class EstimationController {
     private EstimationService estimationService;
 
     @PostMapping
-    public EstimationResponse create(@RequestBody EstimationRequest request) {
+    public EstimationResponse create(@Valid @RequestBody EstimationRequest request) {
         return estimationService.create(request);
     }
 
@@ -32,7 +33,7 @@ public class EstimationController {
     }
 
     @PutMapping("/{id}")
-    public EstimationResponse update(@PathVariable Long id, @RequestBody EstimationRequest request) {
+    public EstimationResponse update(@PathVariable Long id, @Valid @RequestBody EstimationRequest request) {
         return estimationService.update(id, request);
     }
 

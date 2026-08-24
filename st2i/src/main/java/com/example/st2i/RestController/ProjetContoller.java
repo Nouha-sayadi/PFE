@@ -1,7 +1,9 @@
 package com.example.st2i.RestController;
 
+import com.example.st2i.DTO.ProjetCompleteRequest;
 import com.example.st2i.Entities.Projet;
 import com.example.st2i.Services.ProjetService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +19,7 @@ public class ProjetContoller {
 
 
     @PostMapping
-    public Projet create(@RequestBody Projet projet) {
+    public Projet create(@Valid @RequestBody Projet projet) {
         return projetService.save(projet);
     }
 
@@ -31,13 +33,18 @@ public class ProjetContoller {
     }
 
     @PutMapping("/{id}")
-    public Projet update(@PathVariable Long id, @RequestBody Projet projet) {
+    public Projet update(@PathVariable Long id, @Valid @RequestBody Projet projet) {
         return projetService.update(id, projet);
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         projetService.delete(id);
+    }
+
+    @PatchMapping("/{id}/complete")
+    public Projet complete(@PathVariable Long id, @RequestBody ProjetCompleteRequest req) {
+        return projetService.completeEmptyFields(id, req);
     }
 
 }

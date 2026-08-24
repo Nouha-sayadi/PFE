@@ -2,6 +2,7 @@ package com.example.st2i.RestController;
 
 import com.example.st2i.Entities.Partenaire;
 import com.example.st2i.Repositories.PartenaireRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,12 +29,12 @@ public class PartenaireController {
     }
 
     @PostMapping
-    public Partenaire create(@RequestBody Partenaire partenaire) {
+    public Partenaire create(@Valid @RequestBody Partenaire partenaire) {
         return partenaireRepository.save(partenaire);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Partenaire> update(@PathVariable Long id, @RequestBody Partenaire partenaire) {
+    public ResponseEntity<Partenaire> update(@PathVariable Long id, @Valid @RequestBody Partenaire partenaire) {
         if (!partenaireRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }

@@ -4,6 +4,7 @@ import com.example.st2i.DTO.KpiMensuelRequest;
 import com.example.st2i.Entities.KpiMensuelProjet;
 import com.example.st2i.Services.KpiAutoCalculeService;
 import com.example.st2i.Services.KpiMensuelService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,7 @@ public class KpiMensuelController {
     private KpiAutoCalculeService kpiAutoCalculeService;
 
     @PostMapping
-    public KpiMensuelProjet save(@RequestBody KpiMensuelRequest req) { return kpiService.saveOrUpdate(req); }
+    public KpiMensuelProjet save(@Valid @RequestBody KpiMensuelRequest req) { return kpiService.saveOrUpdate(req); }
 
 
     @GetMapping("/projet/{id}")

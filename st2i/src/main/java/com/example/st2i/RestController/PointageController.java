@@ -5,6 +5,7 @@ import com.example.st2i.DTO.PointageResponse;
 import com.example.st2i.Entities.User;
 import com.example.st2i.Services.PointageService;
 import com.example.st2i.Services.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +25,7 @@ public class PointageController {
     @PostMapping("/pointer")
     public PointageResponse pointer(
             JwtAuthenticationToken authentication,
-            @RequestBody PointageRequest request) {
+            @Valid @RequestBody PointageRequest request) {
         String keycloakId = authentication.getToken().getSubject();
         User user = userService.findByKeycloakId(keycloakId);
         return pointageService.pointer(user.getId(), request);
@@ -34,7 +35,7 @@ public class PointageController {
     @PostMapping("/pointer/batch")
     public List<PointageResponse> pointerBatch(
             JwtAuthenticationToken authentication,
-            @RequestBody List<PointageRequest> requests) {
+            @Valid @RequestBody List<PointageRequest> requests) {
         String keycloakId = authentication.getToken().getSubject();
         User user = userService.findByKeycloakId(keycloakId);
         return pointageService.pointerBatch(user.getId(), requests);

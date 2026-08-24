@@ -6,6 +6,7 @@ import com.example.st2i.DTO.UserPermissionsResponse;
 import com.example.st2i.Entities.User;
 import com.example.st2i.Services.KeycloakService;
 import com.example.st2i.Services.UserService;
+import jakarta.validation.Valid;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ public class UserController {
     private KeycloakService keycloakService;
 
     @PostMapping("/register")
-    public User register(@RequestBody RegisterRequest request) {
+    public User register(@Valid @RequestBody RegisterRequest request) {
 
         String keycloakId = keycloakService.createUser(request);
 
@@ -58,7 +59,7 @@ public class UserController {
 
 
     @PutMapping("/{id}")
-    public User update(@PathVariable Long id, @RequestBody UpdateUserRequest request) {
+    public User update(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request) {
         return userService.update(id, request);
     }
 

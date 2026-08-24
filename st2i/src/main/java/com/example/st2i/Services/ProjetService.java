@@ -1,5 +1,6 @@
 package com.example.st2i.Services;
 
+import com.example.st2i.DTO.ProjetCompleteRequest;
 import com.example.st2i.Entities.*;
 import com.example.st2i.Repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -147,6 +148,26 @@ public class ProjetService {
             existing.setModeleBusiness(modele);
         } else {
             existing.setModeleBusiness(null);
+        }
+
+        return projetRepository.save(existing);
+    }
+
+    /**
+     * Complète UNIQUEMENT les champs actuellement vides du Projet (dateDemarrage, dateFinPrevu, budgetInitial).
+     * Ne modifie jamais un champ déjà renseigné, ni montantTotal (géré exclusivement par les avenants).
+     */
+    public Projet completeEmptyFields(Long id, ProjetCompleteRequest req) {
+        Projet existing = findById(id);
+
+        if (existing.getDateDemarrage() == null && req.getDateDemarrage() != null) {
+            existing.setDateDemarrage(req.getDateDemarrage());
+        }
+        if (existing.getDateFinPrevu() == null && req.getDateFinPrevu() != null) {
+            existing.setDateFinPrevu(req.getDateFinPrevu());
+        }
+        if (existing.getBudgetInitial() == null && req.getBudgetInitial() != null) {
+            existing.setBudgetInitial(req.getBudgetInitial());
         }
 
         return projetRepository.save(existing);

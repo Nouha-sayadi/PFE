@@ -23,6 +23,11 @@ spring:
         format_sql: true
     database-platform: org.hibernate.dialect.MySQLDialect
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
 server:
   port: 8080
 
@@ -30,4 +35,12 @@ ollama:
   base-url: https://ollama.hacloud.fr
   model: llama3.1:8b
   embed-model: nomic-embed-text
+
+app:
+  upload:
+    dir: uploads
+    max-size: 10485760
+  ocr:
+    tessdata-path: "C:/Program Files/Tesseract-OCR/tessdata"
+    languages: fra+eng
 

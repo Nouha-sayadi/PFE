@@ -6,6 +6,7 @@ import com.example.st2i.Entities.Affectation;
 import com.example.st2i.Entities.User;
 import com.example.st2i.Services.AffectationService;
 import com.example.st2i.Services.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +24,7 @@ public class AffectationController {
 
 
     @PostMapping
-    public AffectationResponse affecter(@RequestBody AffectationRequest request) {
+    public AffectationResponse affecter(@Valid @RequestBody AffectationRequest request) {
         return affectationService.affecter(request);
     }
 

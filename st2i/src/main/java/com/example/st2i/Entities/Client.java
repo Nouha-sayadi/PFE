@@ -2,6 +2,7 @@ package com.example.st2i.Entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.util.List;
@@ -19,7 +20,10 @@ public class Client {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Le code est obligatoire")
     private String code;
+
+    @NotBlank(message = "Le nom est obligatoire")
     private String nom;
     private String raisonSociale;
     private String adresse;

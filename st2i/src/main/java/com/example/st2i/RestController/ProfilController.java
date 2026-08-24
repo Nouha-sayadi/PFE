@@ -4,6 +4,7 @@ import com.example.st2i.DTO.ProfilCreateRequest;
 import com.example.st2i.Entities.Profil;
 import com.example.st2i.Repositories.ProfilRepository;
 import com.example.st2i.Services.ProfilService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,7 @@ public class ProfilController {
 
 
     @PostMapping ("/create")
-    public Profil createProfil(@RequestBody ProfilCreateRequest request) {
+    public Profil createProfil(@Valid @RequestBody ProfilCreateRequest request) {
         return profilService.createProfil(request);
     }
 

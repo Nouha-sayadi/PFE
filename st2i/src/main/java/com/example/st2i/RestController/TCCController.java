@@ -3,6 +3,7 @@ package com.example.st2i.RestController;
 import com.example.st2i.DTO.TCCRequest;
 import com.example.st2i.DTO.TCCResponse;
 import com.example.st2i.Services.TCCService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class TCCController {
     private TCCService tccService;
 
     @PostMapping
-    public TCCResponse create(@RequestBody TCCRequest request) {
+    public TCCResponse create(@Valid @RequestBody TCCRequest request) {
         return tccService.create(request);
     }
 
@@ -32,7 +33,7 @@ public class TCCController {
     }
 
     @PutMapping("/{id}")
-    public TCCResponse update(@PathVariable Long id, @RequestBody TCCRequest request) {
+    public TCCResponse update(@PathVariable Long id, @Valid @RequestBody TCCRequest request) {
         return tccService.update(id, request);
     }
 

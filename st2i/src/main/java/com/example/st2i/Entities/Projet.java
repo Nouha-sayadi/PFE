@@ -3,6 +3,10 @@ package com.example.st2i.Entities;
 import com.example.st2i.enums.StatutProjet;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -19,7 +23,9 @@ public class Projet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Le titre est obligatoire")
     private String titre;
+
     private String description;
 
     private LocalDate dateDemarrageEffective;
@@ -27,8 +33,13 @@ public class Projet {
     private LocalDate dateFinReel;
     private LocalDate dateFinPrevu;
 
+    @DecimalMin(value = "0", message = "Le taux d'avancement doit être compris entre 0 et 100")
+    @DecimalMax(value = "100", message = "Le taux d'avancement doit être compris entre 0 et 100")
     private Double tauxAvancement;
+
+    @PositiveOrZero(message = "Le budget initial doit être positif ou nul")
     private Double budgetInitial;
+
     private Double montantTotal;
     private Double margeNette;
 

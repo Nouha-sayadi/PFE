@@ -2,6 +2,7 @@ package com.example.st2i.RestController;
 
 import com.example.st2i.Entities.ModeleBusiness;
 import com.example.st2i.Repositories.ModeleBusinessRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,12 +29,12 @@ public class ModeleBusinessController {
     }
 
     @PostMapping
-    public ModeleBusiness create(@RequestBody ModeleBusiness modele) {
+    public ModeleBusiness create(@Valid @RequestBody ModeleBusiness modele) {
         return modeleBusinessRepository.save(modele);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ModeleBusiness> update(@PathVariable Long id, @RequestBody ModeleBusiness modele) {
+    public ResponseEntity<ModeleBusiness> update(@PathVariable Long id, @Valid @RequestBody ModeleBusiness modele) {
         if (!modeleBusinessRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }

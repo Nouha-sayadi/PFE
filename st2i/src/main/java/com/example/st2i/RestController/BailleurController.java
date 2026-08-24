@@ -2,6 +2,7 @@ package com.example.st2i.RestController;
 
 import com.example.st2i.Entities.Bailleur;
 import com.example.st2i.Repositories.BailleurRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,12 +29,12 @@ public class BailleurController {
     }
 
     @PostMapping
-    public Bailleur create(@RequestBody Bailleur bailleur) {
+    public Bailleur create(@Valid @RequestBody Bailleur bailleur) {
         return bailleurRepository.save(bailleur);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Bailleur> update(@PathVariable Long id, @RequestBody Bailleur bailleur) {
+    public ResponseEntity<Bailleur> update(@PathVariable Long id, @Valid @RequestBody Bailleur bailleur) {
         if (!bailleurRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }

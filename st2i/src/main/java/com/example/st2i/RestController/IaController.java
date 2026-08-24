@@ -3,6 +3,7 @@ package com.example.st2i.RestController;
 import com.example.st2i.DTO.ChatRequest;
 import com.example.st2i.Services.RagService;
 import com.example.st2i.Services.SyntheseService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,7 +25,7 @@ public class IaController {
     }
 
     @PostMapping("/chat")
-    public String chat(@RequestBody ChatRequest req) {
+    public String chat(@Valid @RequestBody ChatRequest req) {
         return ragService.chat(req.getQuestion());
     }
 }

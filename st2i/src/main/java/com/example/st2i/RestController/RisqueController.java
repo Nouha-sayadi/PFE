@@ -3,6 +3,7 @@ package com.example.st2i.RestController;
 import com.example.st2i.DTO.RisqueRequest;
 import com.example.st2i.Entities.Risque;
 import com.example.st2i.Services.RisqueService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class RisqueController {
     private RisqueService risqueService;
 
     @PostMapping
-    public Risque create(@RequestBody RisqueRequest req) {
+    public Risque create(@Valid @RequestBody RisqueRequest req) {
         return risqueService.create(req);
     }
 
@@ -28,7 +29,7 @@ public class RisqueController {
 
     @PutMapping("/{id}")
     public Risque update(@PathVariable Long id,
-                         @RequestBody RisqueRequest req) {
+                         @Valid @RequestBody RisqueRequest req) {
         return risqueService.update(id, req);
     }
 

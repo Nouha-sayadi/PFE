@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/risques/**").permitAll()
                         .requestMatchers("/api/actions/**").permitAll()
                         .requestMatchers("/api/notifications/**").permitAll()
+                        .requestMatchers("/api/documents/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/ia/**").permitAll()
                         .anyRequest().authenticated()

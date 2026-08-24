@@ -3,6 +3,7 @@ package com.example.st2i.RestController;
 import com.example.st2i.DTO.CoutPrevRequest;
 import com.example.st2i.DTO.CoutPrevResponse;
 import com.example.st2i.Services.CoutPrevService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,12 +19,12 @@ public class CoutPrevController {
     @Autowired private CoutPrevService coutPrevService;
 
     @PostMapping
-    public CoutPrevResponse create(@RequestBody CoutPrevRequest request) {
+    public CoutPrevResponse create(@Valid @RequestBody CoutPrevRequest request) {
         return coutPrevService.create(request);
     }
     @PostMapping("/batch")
     public List<CoutPrevResponse> createBatch(
-            @RequestBody List<CoutPrevRequest> requests) {
+            @Valid @RequestBody List<CoutPrevRequest> requests) {
         return requests.stream()
                 .filter(r -> r.getChargePrevuM() != null && r.getChargePrevuM() > 0)
                 .map(coutPrevService::create)
@@ -70,7 +71,7 @@ public class CoutPrevController {
     @PutMapping("/{id}")
     public CoutPrevResponse update(
             @PathVariable Long id,
-            @RequestBody CoutPrevRequest request) {
+            @Valid @RequestBody CoutPrevRequest request) {
         return coutPrevService.update(id, request);
     }
 
