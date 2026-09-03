@@ -40,13 +40,9 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       name: "Gestion Utilisateurs",
       subItems: [
         {
-          name: "Mon Profil",
-          path: "/profileUser"     
-        },
-        {
           name: "Liste Utilisateurs",
           path: "/users",
-          permission: "GET_USER"    
+          permission: "GET_USER"
         },
       ],
     },

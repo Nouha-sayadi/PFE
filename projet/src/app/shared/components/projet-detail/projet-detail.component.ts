@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -10,7 +10,7 @@ import { TCC, TCCService } from 'app/services/tcc.service';
 import { UserService } from 'app/services/user.service';
 import { NomenclatureService } from 'app/services/nomenclature.service';
 import { HttpClient } from '@angular/common/http';
-import { Contrat, ContratService } from 'app/services/contrat.service';
+import { Contrat, ContratExtractionResult, ContratService, ProjetSuggestion } from 'app/services/contrat.service';
 import { Echeance, EcheanceService } from 'app/services/echeance.service';
 import { KpiMensuel, KpiService } from 'app/services/kpi.service';
 import { Livrable, LivrableService } from 'app/services/livrable.service';
@@ -19,12 +19,13 @@ import { RisqueService, Risque } from 'app/services/risque.service';
 import { ActionService, ActionProjet } from 'app/services/action.service';
 import { forkJoin } from 'rxjs';
 import { IaService } from 'app/services/ia.service';
+import { DocumentManagerComponent } from 'app/shared/components/document-manager/document-manager.component';
 
 
 @Component({
   selector: 'app-projet-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, DocumentManagerComponent],
   templateUrl: './projet-detail.component.html',
   styleUrls: ['./projet-detail.component.css']
 })
@@ -76,6 +77,139 @@ deliveryGlobal = 0;
 showLivrableModal = false;
 livrableForm: any = {};
 editingLivrableId: number | null = null;
+expandedEcheanceDocsId: number | null = null;
+
+// ── Génération PDF de facture (Échéance de Facturation) ──
+@ViewChild('echeanceDocManager') echeanceDocManager?: DocumentManagerComponent;
+generatingFactureId: number | null = null;
+
+downloadFacture(e: Echeance): void {
+  if (!e.id) return;
+  this.generatingFactureId = e.id;
+  this.echeanceService.generateFacture(e.id).subscribe({
+    next: (response) => {
+      this.generatingFactureId = null;
+      const blob = response.body as Blob;
+      const fileName = this.extractFileName(response.headers.get('Content-Disposition')) || `facture_echeance${e.numero}.pdf`;
+      const url = window.URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      if (this.expandedEcheanceDocsId === e.id) {
+        this.echeanceDocManager?.loadDocuments();
+      }
+      this.showToast('Facture générée');
+    },
+    error: (err: any) => {
+      this.generatingFactureId = null;
+      this.showToast(err?.error?.message || 'Échec de la génération de la facture', 'error');
+    }
+  });
+}
+
+private extractFileName(contentDisposition: string | null): string | null {
+  if (!contentDisposition) return null;
+  const match = /filename\*=UTF-8''([^;]+)/.exec(contentDisposition);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+// ── Extraction automatique (import document Contrat) ──
+extractLoading = false;
+extractError = '';
+
+// ── Suggestions de complétion du Projet parent (issues de l'extraction) ──
+projetSuggestions: ProjetSuggestion | null = null;
+applyDateDemarrage = true;
+applyDateFinPrevu = true;
+applyBudgetInitial = true;
+projetCompleteLoading = false;
+
+onContratFileSelected(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (!file) return;
+
+  this.extractError = '';
+  this.extractLoading = true;
+  this.contratService.extractFromDocument(file, this.projetId).subscribe({
+    next: (result: ContratExtractionResult) => {
+      this.extractLoading = false;
+      this.applyContratExtraction(result);
+      this.projetSuggestions = result.projetSuggestions || null;
+      this.applyDateDemarrage = true;
+      this.applyDateFinPrevu = true;
+      this.applyBudgetInitial = true;
+    },
+    error: (err: any) => {
+      this.extractLoading = false;
+      this.extractError = err?.error?.message || "Échec de l'extraction. Vous pouvez continuer la saisie manuellement.";
+    }
+  });
+}
+
+applyProjetSuggestions(): void {
+  if (!this.projetSuggestions) return;
+  const payload: { dateDemarrage?: string | null; dateFinPrevu?: string | null; budgetInitial?: number | null } = {};
+  if (this.applyDateDemarrage && this.projetSuggestions.dateDemarrage) {
+    payload.dateDemarrage = this.projetSuggestions.dateDemarrage;
+  }
+  if (this.applyDateFinPrevu && this.projetSuggestions.dateFinPrevu) {
+    payload.dateFinPrevu = this.projetSuggestions.dateFinPrevu;
+  }
+  if (this.applyBudgetInitial && this.projetSuggestions.budgetInitial != null) {
+    payload.budgetInitial = this.projetSuggestions.budgetInitial;
+  }
+  if (Object.keys(payload).length === 0) {
+    this.projetSuggestions = null;
+    return;
+  }
+
+  this.projetCompleteLoading = true;
+  this.projetService.completeEmptyFields(this.projetId, payload).subscribe({
+    next: (updated) => {
+      this.projetCompleteLoading = false;
+      this.projet = updated;
+      this.projetSuggestions = null;
+      this.showToast('Informations du projet complétées');
+    },
+    error: (err: any) => {
+      this.projetCompleteLoading = false;
+      this.showToast(err?.error?.message || 'Échec de la complétion du projet', 'error');
+    }
+  });
+}
+
+dismissProjetSuggestions(): void {
+  this.projetSuggestions = null;
+}
+
+private applyContratExtraction(result: ContratExtractionResult): void {
+  const c = result.contrat || {};
+  if (c.numeroContrat) this.contratForm.numeroContrat = c.numeroContrat;
+  if (c.intitule) this.contratForm.intitule = c.intitule;
+  if (c.montantTotal != null) this.contratForm.montantTotal = c.montantTotal;
+  if (c.dateSignature) this.contratForm.dateSignature = c.dateSignature;
+  if (c.dateEcheance) this.contratForm.dateEcheance = c.dateEcheance;
+  if (c.conditionsPaiement) this.contratForm.conditionsPaiement = c.conditionsPaiement;
+
+  const livrablesExtraits = (result.livrables || []).filter(l => l.designation?.trim());
+  if (livrablesExtraits.length > 0) {
+    this.contratNouveauxLivrables = livrablesExtraits.map((l, i) => ({
+      numero: l.numero ?? i + 1,
+      designation: l.designation || '',
+      phase: l.phase || '',
+      dateLivraisonPrevue: l.dateLivraisonPrevue || null
+    }));
+  }
+}
+
+toggleEcheanceDocs(id: number): void {
+  this.expandedEcheanceDocsId = this.expandedEcheanceDocsId === id ? null : id;
+}
 
   
   showCoutPrevModal = false;
@@ -191,6 +325,9 @@ openContratCreate() {
     montantTotal: null, dateSignature: null, dateEcheance: null, conditionsPaiement: '' };
   this.editingContratId = null;
   this.contratNouveauxLivrables = [];
+  this.extractError = '';
+  this.extractLoading = false;
+  this.projetSuggestions = null;
   this.showContratModal = true;
 }
 openContratEdit(c: Contrat) {
@@ -211,6 +348,14 @@ removeContratLivrable(i: number) {
   this.contratNouveauxLivrables.splice(i, 1);
 }
 submitContrat() {
+  if (!this.contratForm.numeroContrat?.trim() || !this.contratForm.intitule?.trim()) {
+    this.showToast('Le numéro et l\'intitulé du contrat sont obligatoires', 'error');
+    return;
+  }
+  if (this.contratForm.montantTotal == null || this.contratForm.montantTotal <= 0) {
+    this.showToast('Le montant total doit être un nombre positif', 'error');
+    return;
+  }
   const obs = this.editingContratId
     ? this.contratService.update(this.editingContratId, this.contratForm)
     : this.contratService.create(this.contratForm);
@@ -250,6 +395,14 @@ openEcheanceEdit(e: Echeance) {
   this.showEcheanceModal = true;
 }
 submitEcheance() {
+  if (this.echeanceForm.numero == null || !this.echeanceForm.objet?.trim()) {
+    this.showToast('Le numéro et l\'objet de l\'échéance sont obligatoires', 'error');
+    return;
+  }
+  if (this.echeanceForm.pourcentage != null && (this.echeanceForm.pourcentage < 0 || this.echeanceForm.pourcentage > 1)) {
+    this.showToast('Le pourcentage doit être compris entre 0 et 1', 'error');
+    return;
+  }
   const obs = this.editingEcheanceId
     ? this.echeanceService.update(this.editingEcheanceId, this.echeanceForm)
     : this.echeanceService.create(this.echeanceForm);
@@ -562,6 +715,10 @@ submitEstimation() {
     this.showToast('Saisissez le nombre de jours estimés', 'error');
     return;
   }
+  if (this.editingEstimationId === null && !this.estimationForm.ressourceId) {
+    this.showToast('Sélectionnez une ressource', 'error');
+    return;
+  }
   if (this.editingEstimationId !== null) {
     const payload = {
       nbrJours: Number(this.estimationForm.nbrJours),
@@ -785,6 +942,10 @@ selectGroup(i: number): void {
   }
 
   submitCoutPrevEdit() {
+    if (this.coutPrevForm.chargePrevuM == null || this.coutPrevForm.chargePrevuM < 0) {
+      this.showToast('La charge prévue doit être un nombre positif ou nul', 'error');
+      return;
+    }
     const payload = {
       projetId:     this.projetId,
       ressourceId:  this.coutPrevForm.ressourceId,
@@ -904,6 +1065,10 @@ openLivrableEdit(l: Livrable) {
 }
 
 submitLivrable() {
+  if (this.livrableForm.numero == null || !this.livrableForm.designation?.trim() || !this.livrableForm.phase?.trim()) {
+    this.showToast('Le numéro, la désignation et la phase sont obligatoires', 'error');
+    return;
+  }
   const obs = this.editingLivrableId
     ? this.livrableService.update(this.editingLivrableId, this.livrableForm)
     : this.livrableService.create(this.livrableForm);
@@ -984,6 +1149,10 @@ openAvenantEdit(a: Avenant) {
 }
 
 submitAvenant() {
+  if (!this.avenantForm.numero?.trim() || !this.avenantForm.objet?.trim()) {
+    this.showToast('Le numéro et l\'objet de l\'avenant sont obligatoires', 'error');
+    return;
+  }
   const obs = this.editingAvenantId
     ? this.avenantService.update(this.editingAvenantId, this.avenantForm)
     : this.avenantService.create(this.avenantForm);
@@ -1083,6 +1252,18 @@ openRisqueEdit(r: Risque) {
 }
 
 submitRisque() {
+  if (!this.risqueForm.code?.trim() || !this.risqueForm.description?.trim()) {
+    this.showToast('Le code et la description du risque sont obligatoires', 'error');
+    return;
+  }
+  if (this.risqueForm.probabilite != null && (this.risqueForm.probabilite < 1 || this.risqueForm.probabilite > 5)) {
+    this.showToast('La probabilité doit être comprise entre 1 et 5', 'error');
+    return;
+  }
+  if (this.risqueForm.impact != null && (this.risqueForm.impact < 1 || this.risqueForm.impact > 5)) {
+    this.showToast('L\'impact doit être compris entre 1 et 5', 'error');
+    return;
+  }
   const obs = this.editingRisqueId
     ? this.risqueService.update(this.editingRisqueId, this.risqueForm)
     : this.risqueService.create(this.risqueForm);
@@ -1125,6 +1306,10 @@ openActionEdit(a: ActionProjet) {
 }
 
 submitAction() {
+  if (!this.actionForm.code?.trim() || !this.actionForm.description?.trim()) {
+    this.showToast('Le code et la description de l\'action sont obligatoires', 'error');
+    return;
+  }
   const obs = this.editingActionId
     ? this.actionService.update(this.editingActionId, this.actionForm)
     : this.actionService.create(this.actionForm);

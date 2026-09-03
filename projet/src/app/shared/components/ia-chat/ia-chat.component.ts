@@ -19,7 +19,11 @@ export class IaChatComponent {
 
   envoyer(): void {
     const q = this.question.trim();
-    if (!q || this.loading) return;
+    if (this.loading) return;
+    if (!q) {
+      this.errorMsg = 'Veuillez saisir une question.';
+      return;
+    }
 
     // Affiche immédiatement la question de l'utilisateur
     this.messages.push({ role: 'user', content: q });

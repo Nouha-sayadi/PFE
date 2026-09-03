@@ -26,6 +26,16 @@ createUserAdmin(user: any): Observable<any> {
     return this.http.get<User>(`${this.apiUrl}/me`);
   }
 
+  uploadMyPhoto(file: File): Observable<User> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<User>(`${this.apiUrl}/me/photo`, formData);
+  }
+
+  getPhotoUrl(userId: number): string {
+    return `${this.apiUrl}/${userId}/photo`;
+  }
+
   updateUser(id: number, user: any): Observable<any> {
   const payload = {
     nom: user.nom,

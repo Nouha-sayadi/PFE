@@ -1,0 +1,239 @@
+
+
+version: '3.9'
+
+
+networks:
+  st2i-network:
+    driver: bridge
+    name: st2i-network
+
+
+volumes:
+  mysql-data:
+    driver: local
+    name: st2i-mysql-data
+  
+  keycloak-data:
+    driver: local
+    name: st2i-keycloak-data
+
+
+services:
+
+ 
+  mysql:
+    image: mysql:8.0
+    container_name: st2i-mysql
+    restart: unless-stopped
+    
+    # Ports
+    ports:
+      - "3306:3306"
+    
+    # Variables d'environnement
+    environment:
+    MYSQL_ROOT_PASSWORD: root
+    MYSQL_DATABASE: st2i_db
+    MYSQL_ROOT_HOST: '%'
+    
+    # Volumes (données persistantes)
+    volumes:
+      - mysql-data:/var/lib/mysql
+    
+    # Network
+    networks:
+      - st2i-network
+    
+    # Health check (vérifie que MySQL est prêt)
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    # Logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Security
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+
+  # 
+  keycloak:
+    image: keycloak/keycloak:latest
+    container_name: st2i-keycloak
+    restart: unless-stopped
+    
+    # Ports
+    ports:
+      - "8080:8080"
+    
+    # Variables d'environnement
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      # Database configuration
+      DB_VENDOR: mysql
+      DB_ADDR: mysql
+      DB_PORT: 3306
+      DB_DATABASE: st2i
+      DB_USER: st2i
+      DB_PASSWORD: st2i123
+      # Proxy (important pour reverse proxy)
+      PROXY_ADDRESS_FORWARDING: "true"
+      KEYCLOAK_PROXY: edge
+      # Realm config
+      KEYCLOAK_DEFAULT_REALM: st2i
+    
+    # Commande de démarrage
+    command:
+      - start-dev
+    
+    # Dépendance : attend que MySQL soit healthy
+    depends_on:
+      mysql:
+        condition: service_healthy
+    
+    # Volumes
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+    
+    # Network
+    networks:
+      - st2i-network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/auth/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    
+    # Logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+  backend:
+    build:
+      context: ./st2i
+      dockerfile: Dockerfile
+    container_name: st2i-backend
+    restart: unless-stopped
+    
+    # Ports
+    ports:
+      - "8081:8080"
+    
+    # Variables d'environnement
+    environment:
+      # Spring
+      SPRING_APPLICATION_NAME: st2i-backend
+      SPRING_PROFILES_ACTIVE: docker
+      
+      # Database
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/st2i?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: st2i
+      SPRING_DATASOURCE_PASSWORD: st2i123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      
+      # Keycloak / OAuth2
+      KEYCLOAK_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_REALM: st2i
+      KEYCLOAK_CLIENT_ID: backend-client
+      KEYCLOAK_CLIENT_SECRET: backend-secret
+      
+      # Logging
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_COM_EXAMPLE: DEBUG
+      
+      # JVM
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    
+    # Dépendances : attend que MySQL et Keycloak soient healthy
+    depends_on:
+      mysql:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    
+    # Volumes (optionnel : pour les logs)
+    volumes:
+      - ./logs/backend:/app/logs
+    
+    # Network
+    networks:
+      - st2i-network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+ 
+  frontend:
+    build:
+      context: ./projet
+      dockerfile: Dockerfile
+    container_name: st2i-frontend
+    restart: unless-stopped
+    
+    # Ports
+    ports:
+      - "80:80"
+      - "443:443"  # HTTPS (optionnel)
+    
+    # Dépendance : attend que le backend soit healthy
+    depends_on:
+      backend:
+        condition: service_healthy
+    
+    # Volumes (optionnel : pour les logs)
+    volumes:
+      - ./logs/frontend:/var/log/nginx
+    
+    # Network
+    networks:
+      - st2i-network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    # Logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+

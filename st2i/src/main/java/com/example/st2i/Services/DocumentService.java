@@ -111,6 +111,43 @@ public class DocumentService {
         }
     }
 
+    /**
+     * Enregistre un PDF généré automatiquement (ex: facture) comme Document.
+     * Remplace le document généré précédent pour cette entité s'il existe — les uploads manuels ne sont jamais touchés.
+     */
+    public Document saveGeneratedPdf(TypeEntiteDocument entityType, Long entityId, byte[] pdfBytes, String fileName) {
+        checkEntityExists(entityType, entityId);
+
+        documentRepository.findFirstByEntityTypeAndEntityIdAndGenereTrueOrderByDateUploadDesc(entityType, entityId)
+                .ifPresent(existing -> delete(existing.getId()));
+
+        String storedName = UUID.randomUUID() + ".pdf";
+        try {
+            Path targetDir = resolveEntityDir(entityType, entityId);
+            Files.createDirectories(targetDir);
+            Path targetFile = targetDir.resolve(storedName).normalize();
+            if (!targetFile.startsWith(targetDir)) {
+                throw new InvalidFileTypeException("Nom de fichier invalide.");
+            }
+            Files.write(targetFile, pdfBytes);
+
+            Document document = Document.builder()
+                    .nomFichier(sanitizeFileName(fileName))
+                    .nomStocke(storedName)
+                    .cheminFichier(relativePath(entityType, entityId, storedName))
+                    .typeMime("application/pdf")
+                    .taille((long) pdfBytes.length)
+                    .dateUpload(LocalDateTime.now())
+                    .entityType(entityType)
+                    .entityId(entityId)
+                    .genere(true)
+                    .build();
+            return documentRepository.save(document);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Échec de l'enregistrement du PDF généré.", e);
+        }
+    }
+
     public List<Document> getByEntity(TypeEntiteDocument entityType, Long entityId) {
         return documentRepository.findByEntityTypeAndEntityIdOrderByDateUploadDesc(entityType, entityId);
     }

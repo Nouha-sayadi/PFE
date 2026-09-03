@@ -1,0 +1,73 @@
+
+# Dependencies (recréées avec npm ci dans Dockerfile)
+node_modules/
+.npm/
+
+# Build output
+dist/
+build/
+*.tar.gz
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+.project
+.classpath
+.settings/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+docs/
+README.md
+*.md
+LICENSE
+
+# Tests
+src/**/*.spec.ts
+karma.conf.js
+.coverage/
+coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Config
+tsconfig.*.json
+angular.json
+jest.config.js
+
+# Cache
+.angular/
+.cache/
+.eslintcache
+
+# Docker
+Dockerfile.dev
+docker-compose.*.yml
+.dockerignore
+nginx.conf.dev
+
+# CI/CD
+.gitlab-ci.yml
+.github/
+
+# Others
+*.tmp
+*.bak
+Thumbs.db

@@ -35,7 +35,7 @@
     <!-- Formulaire -->
     <div style="padding:2rem;">
 
-      <form (ngSubmit)="onSubmit()">
+      <form (ngSubmit)="onSubmit(registerForm)" #registerForm="ngForm" novalidate>
         <div style="display:flex; flex-direction:column; gap:14px;">
 
           <!-- Prénom -->
@@ -45,10 +45,17 @@
             </label>
             <input [(ngModel)]="nom"
                    name="fname"
+                   #fnameRef="ngModel"
+                   required
+                   minlength="2"
                    placeholder="ex : Jean"
                    style="width:100%; height:42px; border:1px solid #dde3ee; border-radius:8px; padding:0 14px; font-size:14px; color:#1a1a1a; background:#f7f9fc; outline:none; box-sizing:border-box; transition:border-color 0.2s;"
                    onfocus="this.style.borderColor='#1B5EAB'; this.style.boxShadow='0 0 0 3px rgba(27,94,171,0.1)'; this.style.background='#fff';"
                    onblur="this.style.borderColor='#dde3ee'; this.style.boxShadow='none'; this.style.background='#f7f9fc';">
+            <div *ngIf="fnameRef.invalid && (fnameRef.dirty || fnameRef.touched)" style="color:#d92d20; font-size:12px; margin-top:4px;">
+              <span *ngIf="fnameRef.errors?.['required']">Le prénom est obligatoire.</span>
+              <span *ngIf="fnameRef.errors?.['minlength']">Le prénom doit contenir au moins 2 caractères.</span>
+            </div>
           </div>
 
           <!-- Nom -->
@@ -58,10 +65,17 @@
             </label>
             <input [(ngModel)]="prenom"
                    name="lname"
+                   #lnameRef="ngModel"
+                   required
+                   minlength="2"
                    placeholder="ex : Dupont"
                    style="width:100%; height:42px; border:1px solid #dde3ee; border-radius:8px; padding:0 14px; font-size:14px; color:#1a1a1a; background:#f7f9fc; outline:none; box-sizing:border-box; transition:border-color 0.2s;"
                    onfocus="this.style.borderColor='#1B5EAB'; this.style.boxShadow='0 0 0 3px rgba(27,94,171,0.1)'; this.style.background='#fff';"
                    onblur="this.style.borderColor='#dde3ee'; this.style.boxShadow='none'; this.style.background='#f7f9fc';">
+            <div *ngIf="lnameRef.invalid && (lnameRef.dirty || lnameRef.touched)" style="color:#d92d20; font-size:12px; margin-top:4px;">
+              <span *ngIf="lnameRef.errors?.['required']">Le nom est obligatoire.</span>
+              <span *ngIf="lnameRef.errors?.['minlength']">Le nom doit contenir au moins 2 caractères.</span>
+            </div>
           </div>
 
           <!-- Email -->
@@ -71,11 +85,18 @@
             </label>
             <input [(ngModel)]="email"
                    name="email"
+                   #emailRef="ngModel"
                    type="email"
+                   required
+                   email
                    placeholder="ex : jean.dupont@st2i.com"
                    style="width:100%; height:42px; border:1px solid #dde3ee; border-radius:8px; padding:0 14px; font-size:14px; color:#1a1a1a; background:#f7f9fc; outline:none; box-sizing:border-box; transition:border-color 0.2s;"
                    onfocus="this.style.borderColor='#1B5EAB'; this.style.boxShadow='0 0 0 3px rgba(27,94,171,0.1)'; this.style.background='#fff';"
                    onblur="this.style.borderColor='#dde3ee'; this.style.boxShadow='none'; this.style.background='#f7f9fc';">
+            <div *ngIf="emailRef.invalid && (emailRef.dirty || emailRef.touched)" style="color:#d92d20; font-size:12px; margin-top:4px;">
+              <span *ngIf="emailRef.errors?.['required']">L'email est obligatoire.</span>
+              <span *ngIf="emailRef.errors?.['email']">L'email n'est pas valide.</span>
+            </div>
           </div>
 
           <!-- Mot de passe avec icône œil -->
@@ -87,6 +108,9 @@
     <input [type]="showPassword ? 'text' : 'password'"
            [(ngModel)]="password"
            name="password"
+           #passwordRef="ngModel"
+           required
+           minlength="8"
            placeholder="••••••••"
            style="width:100%; height:42px; border:1px solid #dde3ee; border-radius:8px; padding:0 44px 0 14px; font-size:14px; color:#1a1a1a; background:#f7f9fc; outline:none; box-sizing:border-box; transition:border-color 0.2s;"
            onfocus="this.style.borderColor='#1B5EAB'; this.style.boxShadow='0 0 0 3px rgba(27,94,171,0.1)'; this.style.background='#fff';"
@@ -121,6 +145,10 @@
 
     </button>
   </div>
+  <div *ngIf="passwordRef.invalid && (passwordRef.dirty || passwordRef.touched)" style="color:#d92d20; font-size:12px; margin-top:4px;">
+    <span *ngIf="passwordRef.errors?.['required']">Le mot de passe est obligatoire.</span>
+    <span *ngIf="passwordRef.errors?.['minlength']">Le mot de passe doit contenir au moins 8 caractères.</span>
+  </div>
 </div>
 
 <!-- Conditions d'utilisation -->
@@ -141,7 +169,10 @@
 
           <!-- Bouton Submit -->
           <button type="submit"
-                  style="width:100%; height:44px; background:#1B5EAB; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; margin-top:6px; transition:background 0.2s;"
+                  [disabled]="registerForm.invalid"
+                  [style.opacity]="registerForm.invalid ? 0.6 : 1"
+                  [style.cursor]="registerForm.invalid ? 'not-allowed' : 'pointer'"
+                  style="width:100%; height:44px; background:#1B5EAB; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; margin-top:6px; transition:background 0.2s;"
                   onmouseover="this.style.background='#154d8e'"
                   onmouseout="this.style.background='#1B5EAB'">
             Créer mon compte

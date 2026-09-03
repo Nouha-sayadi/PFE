@@ -11,5 +11,6 @@ export interface User {
   prenom: string;
   email: string;motDePasse?: string;
   keycloakId?: string;
+  photoUrl?: string | null;
   profils: Profile[];
 }

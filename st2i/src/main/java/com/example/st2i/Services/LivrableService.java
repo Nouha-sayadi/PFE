@@ -35,7 +35,7 @@ public class LivrableService {
                 .commentaire(request.getCommentaire())
                 .build();
 
-        // ✅ Calculs automatiques
+
         calculerDeliveryEtEcart(livrable);
 
         return toDTO(livrableRepository.save(livrable));
@@ -54,7 +54,7 @@ public class LivrableService {
         livrable.setLivre(request.getLivre() != null ? request.getLivre() : false);
         livrable.setCommentaire(request.getCommentaire());
 
-        // ✅ Recalculer automatiquement
+
         calculerDeliveryEtEcart(livrable);
 
         return toDTO(livrableRepository.save(livrable));
@@ -65,7 +65,7 @@ public class LivrableService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    // ✅ Calcul delivery global du projet
+
     public double getDeliveryGlobal(Long projetId) {
         long total = livrableRepository.countByProjetId(projetId);
         if (total == 0) return 0;
@@ -77,7 +77,7 @@ public class LivrableService {
         livrableRepository.deleteById(id);
     }
 
-    // ✅ Calcul automatique delivery et écart
+
     private void calculerDeliveryEtEcart(Livrable livrable) {
         // delivery = 1 si livré, 0 sinon
         livrable.setDelivery(Boolean.TRUE.equals(livrable.getLivre()) ? 1.0 : 0.0);

@@ -25,4 +25,8 @@ public class Document {
     private TypeEntiteDocument entityType;
 
     private Long entityId;
+
+    /** true si ce document a été généré automatiquement par l'application (ex: facture PDF), false pour un upload manuel. */
+    @Builder.Default
+    private boolean genere = false;
 }

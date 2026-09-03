@@ -161,7 +161,19 @@ canViewTab(type: string): boolean {
     this.showModal = true;
   }
 
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
   submitForm() {
+    if (!this.formValide) {
+      this.showToast('Veuillez remplir les champs obligatoires', 'error');
+      return;
+    }
+    if (this.form.email && !this.isValidEmail(this.form.email)) {
+      this.showToast('L\'email n\'est pas valide', 'error');
+      return;
+    }
     // ✅ Adapter le payload selon le type
     const payload = this.buildPayload();
     const obs = this.editingId

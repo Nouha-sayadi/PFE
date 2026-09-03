@@ -1,0 +1,65 @@
+<div class="doc-manager">
+  <div class="doc-manager-header">
+    <h4>{{ title }}</h4>
+  </div>
+
+  <!-- Zone drag & drop -->
+  <div
+    class="doc-dropzone"
+    [class.doc-dropzone-active]="isDragActive"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+    (click)="fileInput.click()"
+  >
+    <input
+      #fileInput
+      type="file"
+      accept=".pdf,.jpg,.jpeg,.png,.docx"
+      multiple
+      style="display: none"
+      (change)="onFileSelected($event)"
+    />
+    <p class="doc-dropzone-text">
+      {{ isDragActive ? 'Déposez le(s) fichier(s) ici' : 'Glissez-déposez un fichier ou cliquez pour parcourir' }}
+    </p>
+    <p class="doc-dropzone-hint">PDF, JPG, PNG, DOCX — 10 Mo max</p>
+  </div>
+
+  <!-- Erreur -->
+  <div class="doc-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <!-- Uploads en cours -->
+  <div class="doc-upload-task" *ngFor="let task of uploadTasks">
+    <span class="doc-upload-name">{{ task.fileName }}</span>
+    <div class="doc-progress-track" *ngIf="!task.error">
+      <div class="doc-progress-fill" [style.width.%]="task.progress"></div>
+    </div>
+    <span class="doc-upload-pct" *ngIf="!task.error">{{ task.progress }}%</span>
+    <span class="doc-upload-error" *ngIf="task.error">{{ task.error }}</span>
+  </div>
+
+  <!-- Liste des documents -->
+  <div class="doc-list" *ngIf="!loading && documents.length > 0">
+    <div class="doc-item" *ngFor="let doc of documents">
+      <div class="doc-item-info">
+        <span class="doc-item-name">{{ doc.nomFichier }}</span>
+        <span class="doc-item-meta">
+          {{ doc.dateUpload | date: 'dd/MM/yyyy HH:mm' }} · {{ formatSize(doc.taille) }}
+        </span>
+      </div>
+      <div class="doc-item-actions">
+        <button class="doc-btn doc-btn-download" (click)="download(doc)" title="Télécharger">
+          Télécharger
+        </button>
+        <button class="doc-btn doc-btn-delete" (click)="remove(doc)" title="Supprimer">
+          Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-empty" *ngIf="!loading && documents.length === 0">
+    Aucun document attaché
+  </div>
+</div>

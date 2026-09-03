@@ -56,6 +56,10 @@ export class ProjetService {
     return this.http.put<Projet>(`${this.api}/${id}`, projet);
   }
 
+  completeEmptyFields(id: number, data: { dateDemarrage?: string | null; dateFinPrevu?: string | null; budgetInitial?: number | null }): Observable<Projet> {
+    return this.http.patch<Projet>(`${this.api}/${id}/complete`, data);
+  }
+
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.api}/${id}`);
   }

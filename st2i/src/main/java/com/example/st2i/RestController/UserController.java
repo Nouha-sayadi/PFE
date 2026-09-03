@@ -5,13 +5,18 @@ import com.example.st2i.DTO.UpdateUserRequest;
 import com.example.st2i.DTO.UserPermissionsResponse;
 import com.example.st2i.Entities.User;
 import com.example.st2i.Services.KeycloakService;
+import com.example.st2i.Services.UserPhotoService;
 import com.example.st2i.Services.UserService;
 import jakarta.validation.Valid;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 import java.util.List;
@@ -26,6 +31,9 @@ public class UserController {
 
     @Autowired
     private KeycloakService keycloakService;
+
+    @Autowired
+    private UserPhotoService userPhotoService;
 
     @PostMapping("/register")
     public User register(@Valid @RequestBody RegisterRequest request) {
@@ -66,5 +74,21 @@ public class UserController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         userService.delete(id);
+    }
+
+    @PostMapping("/me/photo")
+    public User uploadMyPhoto(JwtAuthenticationToken authentication, @RequestParam("file") MultipartFile file) {
+        String keycloakId = authentication.getToken().getSubject();
+        User user = userService.findByKeycloakId(keycloakId);
+        return userPhotoService.upload(user.getId(), file);
+    }
+
+    @GetMapping("/{id}/photo")
+    public ResponseEntity<Resource> getPhoto(@PathVariable Long id) {
+        Resource resource = userPhotoService.loadPhoto(id);
+        MediaType mediaType = MediaType.parseMediaType(userPhotoService.resolvePhotoMimeType(id));
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .body(resource);
     }
 }

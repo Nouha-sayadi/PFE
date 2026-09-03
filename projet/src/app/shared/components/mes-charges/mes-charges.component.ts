@@ -180,7 +180,14 @@ export class MesChargesComponent implements OnInit {
 
   submitPointage() {
     const lignes = this.moisPointage.filter(m => m.joursReel !== null && m.joursReel >= 0);
-    if (lignes.length === 0) return;
+    if (lignes.length === 0) {
+      this.showToast('Saisissez au moins un mois avec un nombre de jours valide', 'error');
+      return;
+    }
+    if (lignes.some(m => (m.joursReel as number) > 31)) {
+      this.showToast('Le nombre de jours ne peut pas dépasser 31', 'error');
+      return;
+    }
 
     const payloads = lignes.map(m => ({
       projetId:     this.projetId,

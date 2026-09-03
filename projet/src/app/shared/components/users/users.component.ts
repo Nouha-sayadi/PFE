@@ -147,7 +147,23 @@ export class UsersComponent implements OnInit {
       : this.createForm.profilCodes.push(code);
   }
 
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
   submitCreate() {
+    if (!this.createForm.nom?.trim() || !this.createForm.prenom?.trim() || !this.createForm.email?.trim() || !this.createForm.password) {
+      this.showToast('Nom, prénom, email et mot de passe sont obligatoires', 'error');
+      return;
+    }
+    if (!this.isValidEmail(this.createForm.email)) {
+      this.showToast('L\'email n\'est pas valide', 'error');
+      return;
+    }
+    if (this.createForm.password.length < 8) {
+      this.showToast('Le mot de passe doit contenir au moins 8 caractères', 'error');
+      return;
+    }
     const payload = {
       nom: this.createForm.nom,
       prenom: this.createForm.prenom,
@@ -186,6 +202,14 @@ export class UsersComponent implements OnInit {
   }
 
   submitEdit() {
+    if (!this.editForm.nom?.trim() || !this.editForm.prenom?.trim() || !this.editForm.email?.trim()) {
+      this.showToast('Nom, prénom et email sont obligatoires', 'error');
+      return;
+    }
+    if (!this.isValidEmail(this.editForm.email)) {
+      this.showToast('L\'email n\'est pas valide', 'error');
+      return;
+    }
     const payload = {
       nom: this.editForm.nom,
       prenom: this.editForm.prenom,
@@ -244,6 +268,14 @@ export class UsersComponent implements OnInit {
   }
 
   submitTCC() {
+  if (!this.tccForm.annee) {
+    this.showToast('L\'année est obligatoire', 'error');
+    return;
+  }
+  if (this.tccForm.tccBase == null || this.tccForm.tccBase < 0 || this.tccForm.tccAvecFG == null || this.tccForm.tccAvecFG < 0) {
+    this.showToast('Le TCC de base et le TCC avec FG doivent être des nombres positifs ou nuls', 'error');
+    return;
+  }
   const payload = {
     utilisateurId: this.selectedUser.id,
     annee: this.tccForm.annee

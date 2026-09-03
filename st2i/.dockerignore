@@ -1,0 +1,62 @@
+
+
+# Build artifacts
+target/
+*.jar
+*.war
+*.ear
+build/
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+docs/
+README.md
+*.md
+
+# Tests
+src/test/
+.coverage/
+coverage/
+
+# Logs
+logs/
+*.log
+
+# Node (si utilisé)
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Maven
+.m2/
+.mvn/
+
+# Docker
+Dockerfile.dev
+docker-compose.*.yml
+.dockerignore
+
+# Others
+*.tmp
+.classpath
+.project
+.settings/

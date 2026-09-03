@@ -1,5 +1,26 @@
-.DS_Store 
-Thumbs.db 
-.vscode/ 
-.idea/ 
-*.env 
+# SECRETS
+.env
+.env.local
+
+# BUILD
+target/
+dist/
+node_modules/
+.m2/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# SYSTÈME
+.DS_Store
+Thumbs.db
+
+# LOGS
+logs/
+*.log
+
+# DONNÉES LOCALES (uploads, temp files)
+st2i/uploads/
+projet/uploads/

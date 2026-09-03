@@ -28,6 +28,9 @@ public class User {
     private String ville;
     private String codePostal;
 
+    /** Chemin relatif de la photo de profil sur le serveur (null si aucune photo). */
+    private String photoUrl;
+
 
     @OneToMany(mappedBy = "utilisateur", fetch = FetchType.LAZY)
     @JsonIgnore

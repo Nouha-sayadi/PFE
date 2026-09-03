@@ -1,15 +1,16 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { SignupFormComponent } from '../auth/signup-form/signup-form.component';
 import { HttpClient } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CheckboxComponent } from '../form/input/checkbox.component';
 import { UserService } from '../../../services/user.service';
-@Component({                                    
+@Component({
   selector: 'app-st2i',
   standalone: true,
   imports: [
-  
+    CommonModule,
     RouterModule,
     FormsModule
   ],
@@ -30,7 +31,12 @@ export class St2iComponent { nom: string = '';
     this.showPassword = !this.showPassword;
   }
 
-  onSubmit() {
+  onSubmit(form: NgForm) {
+
+    if (form.invalid) {
+      form.control.markAllAsTouched();
+      return;
+    }
 
     if (!this.isChecked) {
       alert("Veuillez accepter les conditions");

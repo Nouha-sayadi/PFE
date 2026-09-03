@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Facture</title>
+    <style type="text/css">
+        @page { size: A4; margin: 2.2cm 2cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10.5pt; color: #1f2937; }
+        .header { width: 100%; margin-bottom: 26px; }
+        .header-left { width: 55%; float: left; }
+        .header-right { width: 40%; float: right; text-align: right; }
+        .company-name { font-size: 20pt; font-weight: bold; color: #185FA5; margin: 0 0 4px 0; }
+        .company-sub { font-size: 9pt; color: #6b7280; margin: 0; }
+        .invoice-title { font-size: 16pt; font-weight: bold; color: #111827; margin: 0 0 6px 0; }
+        .invoice-meta { font-size: 9.5pt; color: #374151; margin: 0; }
+        .clear { clear: both; }
+        .section { margin-top: 24px; }
+        .section-title { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin: 0 0 4px 0; }
+        .client-name { font-size: 12pt; font-weight: bold; color: #111827; margin: 0 0 2px 0; }
+        .client-line { font-size: 9.5pt; color: #4b5563; margin: 0; }
+        .contrat-line { font-size: 10pt; color: #1f2937; margin: 0; }
+        table.recap { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table.recap th { background: #185FA5; color: #ffffff; font-size: 9pt; text-align: left; padding: 8px 10px; }
+        table.recap td { border-bottom: 1px solid #e5e7eb; padding: 8px 10px; font-size: 9.5pt; }
+        table.details { width: 100%; margin-top: 14px; border: 1px solid #e5e7eb; }
+        table.details td { padding: 6px 12px; font-size: 9.5pt; color: #374151; }
+        table.details td.label { color: #6b7280; width: 35%; }
+        .badge { display: inline; padding: 2px 8px; border-radius: 8px; font-size: 9pt; }
+        .badge-emise { background: #dcfce7; color: #0f6e56; }
+        .badge-attente { background: #fef3c7; color: #92400e; }
+        .conditions { margin-top: 20px; font-size: 9.5pt; color: #374151; }
+        .footer { margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 10px; font-size: 8pt; color: #9ca3af; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-left">
+            <p class="company-name">ST2I</p>
+            <p class="company-sub">Société Tunisienne d'Ingénierie Informatique</p>
+        </div>
+        <div class="header-right">
+            <p class="invoice-title">FACTURE</p>
+            <p class="invoice-meta">N&#176; <span th:text="${vm.numeroFacture}">FACT-XXX-01</span></p>
+            <p class="invoice-meta">Date de génération : <span th:text="${vm.dateGeneration}">01/01/2026</span></p>
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="section">
+        <p class="section-title">Client</p>
+        <p class="client-name" th:text="${vm.clientNom}">Nom du client</p>
+        <p class="client-line" th:if="${vm.clientAdresse}" th:text="${vm.clientAdresse}">Adresse</p>
+        <p class="client-line" th:if="${vm.clientMatriculeFiscale}">Matricule fiscale : <span th:text="${vm.clientMatriculeFiscale}">-</span></p>
+    </div>
+
+    <div class="section">
+        <p class="section-title">Contrat</p>
+        <p class="contrat-line" th:text="${vm.numeroContrat}">N&#176; contrat — Intitulé du projet</p>
+    </div>
+
+    <div class="section">
+        <p class="section-title">Récapitulatif</p>
+        <table class="recap">
+            <tr>
+                <th>Objet</th>
+                <th>%</th>
+                <th>Montant prévu</th>
+                <th>Montant facturé</th>
+            </tr>
+            <tr>
+                <td th:text="${vm.objet}">Objet de l'échéance</td>
+                <td th:text="${vm.pourcentage}">0%</td>
+                <td th:text="${vm.montantPrevu}">0 DT</td>
+                <td th:text="${vm.montantFacture}">0 DT</td>
+            </tr>
+        </table>
+
+        <table class="details">
+            <tr>
+                <td class="label">Date initiale</td>
+                <td th:text="${vm.dateInitiale}">-</td>
+            </tr>
+            <tr>
+                <td class="label">Date prévue actualisée</td>
+                <td th:text="${vm.datePrevue}">-</td>
+            </tr>
+            <tr>
+                <td class="label">Date réelle</td>
+                <td th:text="${vm.dateReelle}">-</td>
+            </tr>
+            <tr>
+                <td class="label">Statut</td>
+                <td>
+                    <span class="badge badge-emise" th:if="${vm.statutEmise == 'Émise'}" th:text="${vm.statutEmise}">Émise</span>
+                    <span class="badge badge-attente" th:if="${vm.statutEmise != 'Émise'}" th:text="${vm.statutEmise}">Non émise</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="conditions" th:if="${vm.conditionsPaiement}">
+        <p class="section-title">Conditions de paiement</p>
+        <p th:text="${vm.conditionsPaiement}">-</p>
+    </div>
+
+    <div class="footer">
+        <p>Document généré automatiquement par l'application de gestion de projets ST2I.</p>
+    </div>
+
+</body>
+</html>

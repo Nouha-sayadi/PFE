@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -33,5 +33,12 @@ export class EcheanceService {
   }
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.api}/${id}`);
+  }
+
+  generateFacture(id: number): Observable<HttpResponse<Blob>> {
+    return this.http.post(`${this.api}/${id}/generate-facture`, null, {
+      responseType: 'blob',
+      observe: 'response'
+    });
   }
 }

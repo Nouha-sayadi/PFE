@@ -22,9 +22,43 @@ export class UserInfoCardComponent implements OnInit {
 
   isOpen = false;
   isSaving = false;
-  saveSuccess = false;
+  errorMsg = '';
+
+  toast = { visible: false, message: '', type: 'success' as 'success' | 'error' };
+
+  showToast(message: string, type: 'success' | 'error' = 'success') {
+    this.toast = { visible: true, message, type };
+    setTimeout(() => this.toast.visible = false, 3000);
+  }
+
+  uploadingPhoto = false;
+  photoErrorMsg = '';
 
   user: User = { nom: '', prenom: '', email: '', profils: [] };
+
+  photoUrl(): string {
+    return this.user?.id ? this.userService.getPhotoUrl(this.user.id) : '';
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.user?.id) return;
+
+    this.photoErrorMsg = '';
+    this.uploadingPhoto = true;
+    this.userService.uploadMyPhoto(file).subscribe({
+      next: (updated) => {
+        this.uploadingPhoto = false;
+        this.user = updated;
+      },
+      error: (err: any) => {
+        this.uploadingPhoto = false;
+        this.photoErrorMsg = err?.error?.message || "Échec de l'envoi de la photo.";
+      }
+    });
+  }
 
   // ✅ Getters/Setters pour les champs dynamiques
   get telephone(): string { return (this.user as any).telephone || ''; }
@@ -36,7 +70,7 @@ export class UserInfoCardComponent implements OnInit {
   get codePostal(): string { return (this.user as any).codePostal || ''; }
   set codePostal(v: string) { (this.user as any).codePostal = v; }
 
-  openModal() { this.isOpen = true; this.saveSuccess = false; }
+  openModal() { this.isOpen = true; this.errorMsg = ''; }
   closeModal() { this.isOpen = false; }
 
   ngOnInit(): void {
@@ -46,8 +80,21 @@ export class UserInfoCardComponent implements OnInit {
     });
   }
 
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
   handleSave() {
     if (!this.user?.id) return;
+    this.errorMsg = '';
+    if (!this.user.nom?.trim() || !this.user.prenom?.trim() || !this.user.email?.trim()) {
+      this.errorMsg = 'Nom, prénom et email sont obligatoires.';
+      return;
+    }
+    if (!this.isValidEmail(this.user.email)) {
+      this.errorMsg = "L'email n'est pas valide.";
+      return;
+    }
     this.isSaving = true;
 
     const payload = {
@@ -64,10 +111,14 @@ export class UserInfoCardComponent implements OnInit {
       next: (res) => {
         this.user = res;
         this.isSaving = false;
-        this.saveSuccess = true;
-        setTimeout(() => { this.saveSuccess = false; this.closeModal(); }, 1500);
+        this.closeModal();
+        this.showToast('Profil modifié avec succès');
       },
-      error: (err) => { console.error(err); this.isSaving = false; }
+      error: (err) => {
+        console.error(err);
+        this.isSaving = false;
+        this.errorMsg = err?.error?.message || 'Échec de la mise à jour du profil. Veuillez réessayer.';
+      }
     });
   }
 }

@@ -15,9 +15,18 @@ import { keycloak } from 'app/keycloak/keyclock.config';
 export class UserDropdownComponent {
   isOpen = false;
 
-   user!: User;
+   user?: User;
+   photoError = false;
 
    private userService = inject(UserService)
+
+  photoUrl(): string {
+    return this.user?.id ? this.userService.getPhotoUrl(this.user.id) : '';
+  }
+
+  onPhotoError(): void {
+    this.photoError = true;
+  }
 
   ngOnInit(): void {
     this.userService.getCurrentUser().subscribe({

@@ -817,6 +817,14 @@
             <span class="info-val">{{ c.conditionsPaiement }}</span>
           </div>
         </div>
+
+        <div style="margin-top:16px">
+          <app-document-manager
+            entityType="CONTRAT"
+            [entityId]="c.id!"
+            title="Documents du contrat">
+          </app-document-manager>
+        </div>
       </div>
     </div>
 
@@ -852,7 +860,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let e of echeances">
+        <ng-container *ngFor="let e of echeances">
+        <tr>
           <td class="fw-bold">{{ e.numero }}</td>
           <td>{{ e.objet }}</td>
           <td>{{ (e.pourcentage || 0) * 100 | number:'1.0-0' }}%</td>
@@ -872,10 +881,25 @@
           <td>
             <div class="actions">
               <button class="btn btn-edit btn-sm" (click)="openEcheanceEdit(e)">Modifier</button>
+              <button class="btn btn-edit btn-sm" (click)="toggleEcheanceDocs(e.id!)">Documents</button>
+              <button class="btn btn-secondary btn-sm" [disabled]="generatingFactureId === e.id" (click)="downloadFacture(e)">
+                {{ generatingFactureId === e.id ? 'Génération…' : 'Télécharger' }}
+              </button>
               <button class="btn btn-delete btn-sm" (click)="deleteEcheance(e.id!)">Supprimer</button>
             </div>
           </td>
         </tr>
+        <tr *ngIf="expandedEcheanceDocsId === e.id">
+          <td colspan="11">
+            <app-document-manager
+              #echeanceDocManager
+              entityType="ECHEANCE_FACTURATION"
+              [entityId]="e.id!"
+              title="Documents de l'échéance">
+            </app-document-manager>
+          </td>
+        </tr>
+        </ng-container>
       </tbody>
       <tfoot>
         <tr>
@@ -1099,7 +1123,6 @@
 
     <div class="tab-header">
       <h3>Livrables du projet</h3>
-      <span class="info-note" style="font-size:0.85rem;color:#666;">Les livrables sont définis lors de la création du contrat.</span>
     </div>
 
     <!-- KPI delivery -->
@@ -1173,8 +1196,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let l of livrables"
-            [class.row-livre]="l.livre"
+        <ng-container *ngFor="let l of livrables">
+        <tr [class.row-livre]="l.livre"
             [class.row-realise]="l.realise && !l.livre">
           <td class="fw-bold">{{ l.numero }}</td>
           <td>
@@ -1211,6 +1234,7 @@
             </div>
           </td>
         </tr>
+        </ng-container>
       </tbody>
       <tfoot>
         <tr>
@@ -1444,7 +1468,7 @@
     <div class="form-grid">
       <div class="form-row">
         <label>Numéro avenant *</label>
-        <input [(ngModel)]="avenantForm.numero" placeholder="Ex: A01">
+        <input [(ngModel)]="avenantForm.numero" placeholder="Ex: A01" required>
       </div>
       <div class="form-row">
         <label>Statut</label>
@@ -1458,7 +1482,7 @@
     <div class="form-row">
       <label>Objet de la modification *</label>
       <input [(ngModel)]="avenantForm.objet"
-             placeholder="Ex: Extension de périmètre — Module reporting">
+             placeholder="Ex: Extension de périmètre — Module reporting" required>
     </div>
 
     <!-- Financier -->
@@ -1511,13 +1535,13 @@
       </div>
       <div class="form-row">
         <label>Date d'effet</label>
-        <input [(ngModel)]="avenantForm.dateEffet" type="date">
+        <input [(ngModel)]="avenantForm.dateEffet" type="date" min="1900-01-01" max="2100-12-31">
       </div>
     </div>
     <div class="form-grid">
       <div class="form-row">
         <label>Date de signature</label>
-        <input [(ngModel)]="avenantForm.dateSignature" type="date">
+        <input [(ngModel)]="avenantForm.dateSignature" type="date" min="1900-01-01" max="2100-12-31">
       </div>
     </div>
 
@@ -1698,7 +1722,7 @@
         <h2>Modifier le coût prévisionnel</h2>
         <div class="form-row">
           <label>Mois</label>
-          <input [(ngModel)]="coutPrevForm.mois" type="month">
+          <input [(ngModel)]="coutPrevForm.mois" type="month" min="1900-01" max="2100-12">
         </div>
         <div class="form-row">
           <label>Charge prévue (jours)</label>
@@ -1734,15 +1758,59 @@
    <div class="overlay" *ngIf="showContratModal" (click)="showContratModal = false">
   <div class="modal modal-large" (click)="$event.stopPropagation()">
     <h2>{{ editingContratId ? 'Modifier' : 'Ajouter' }} un contrat</h2>
-    <div class="form-grid">
-      <div class="form-row"><label>N° Contrat</label><input [(ngModel)]="contratForm.numeroContrat" placeholder="CI 09/2024"></div>
-      <div class="form-row"><label>Montant total (DT)</label><input [(ngModel)]="contratForm.montantTotal" type="number"></div>
+
+    <!-- Import automatique depuis un document — uniquement à la création -->
+    <div *ngIf="!editingContratId" class="extract-zone">
+      <div class="extract-zone-header">
+        <span class="extract-zone-title">Importer depuis un document</span>
+        <span class="extract-zone-hint">PDF ou image du contrat — les champs seront pré-remplis automatiquement</span>
+      </div>
+      <label class="btn btn-secondary extract-zone-btn" [class.disabled]="extractLoading">
+        <span *ngIf="!extractLoading">Choisir un fichier</span>
+        <span *ngIf="extractLoading">Extraction en cours…</span>
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none"
+               [disabled]="extractLoading"
+               (change)="onContratFileSelected($event)">
+      </label>
+      <div class="extract-error" *ngIf="extractError">{{ extractError }}</div>
     </div>
-    <div class="form-row"><label>Intitulé</label><input [(ngModel)]="contratForm.intitule"></div>
+
+    <!-- Suggestions de complétion du projet parent (uniquement champs vides) -->
+    <div *ngIf="projetSuggestions" class="suggestion-banner">
+      <p class="suggestion-title">
+        Le contrat contient des informations qui peuvent compléter le projet. Voulez-vous les appliquer ?
+      </p>
+      <div class="suggestion-fields">
+        <label class="suggestion-field" *ngIf="projetSuggestions.dateDemarrage">
+          <input type="checkbox" [(ngModel)]="applyDateDemarrage">
+          <span>Date démarrage : <strong>{{ projetSuggestions.dateDemarrage | date:'dd/MM/yyyy' }}</strong></span>
+        </label>
+        <label class="suggestion-field" *ngIf="projetSuggestions.dateFinPrevu">
+          <input type="checkbox" [(ngModel)]="applyDateFinPrevu">
+          <span>Date fin prévue : <strong>{{ projetSuggestions.dateFinPrevu | date:'dd/MM/yyyy' }}</strong></span>
+        </label>
+        <label class="suggestion-field" *ngIf="projetSuggestions.budgetInitial != null">
+          <input type="checkbox" [(ngModel)]="applyBudgetInitial">
+          <span>Budget initial : <strong>{{ projetSuggestions.budgetInitial | number:'1.0-2' }} DT</strong></span>
+        </label>
+      </div>
+      <div class="suggestion-actions">
+        <button type="button" class="btn" (click)="dismissProjetSuggestions()">Ignorer</button>
+        <button type="button" class="btn btn-primary" [disabled]="projetCompleteLoading" (click)="applyProjetSuggestions()">
+          {{ projetCompleteLoading ? 'Application…' : 'Appliquer la sélection' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-row"><label>N° Contrat *</label><input [(ngModel)]="contratForm.numeroContrat" placeholder="CI 09/2024" required></div>
+      <div class="form-row"><label>Montant total (DT) *</label><input [(ngModel)]="contratForm.montantTotal" type="number" min="0.01" step="0.01" required></div>
+    </div>
+    <div class="form-row"><label>Intitulé *</label><input [(ngModel)]="contratForm.intitule" required></div>
     <div class="form-row"><label>Conditions de paiement</label><input [(ngModel)]="contratForm.conditionsPaiement"></div>
     <div class="form-grid">
-      <div class="form-row"><label>Date signature</label><input [(ngModel)]="contratForm.dateSignature" type="date"></div>
-      <div class="form-row"><label>Date échéance</label><input [(ngModel)]="contratForm.dateEcheance" type="date"></div>
+      <div class="form-row"><label>Date signature</label><input [(ngModel)]="contratForm.dateSignature" type="date" min="1900-01-01" max="2100-12-31"></div>
+      <div class="form-row"><label>Date échéance</label><input [(ngModel)]="contratForm.dateEcheance" type="date" min="1900-01-01" max="2100-12-31"></div>
     </div>
 
     <!-- Livrables — uniquement à la création du contrat -->
@@ -1755,7 +1823,7 @@
         <input style="width:50px;" type="number" [(ngModel)]="l.numero" min="1" placeholder="N°">
         <input style="flex:2;min-width:150px;" [(ngModel)]="l.designation" placeholder="Désignation *">
         <input style="flex:1;min-width:100px;" [(ngModel)]="l.phase" placeholder="Phase">
-        <input style="width:140px;" type="date" [(ngModel)]="l.dateLivraisonPrevue">
+        <input style="width:140px;" type="date" [(ngModel)]="l.dateLivraisonPrevue" min="1900-01-01" max="2100-12-31">
         <button type="button" class="btn btn-danger btn-sm" (click)="removeContratLivrable(i)">Retirer</button>
       </div>
       <div *ngIf="contratNouveauxLivrables.length === 0" style="font-size:0.85rem;color:#888;">Aucun livrable ajouté.</div>
@@ -1774,20 +1842,20 @@
   <div class="modal modal-large" (click)="$event.stopPropagation()">
     <h2>{{ editingEcheanceId ? 'Modifier' : 'Ajouter' }} une échéance</h2>
     <div class="form-grid">
-      <div class="form-row"><label>N°</label><input [(ngModel)]="echeanceForm.numero" type="number"></div>
+      <div class="form-row"><label>N° *</label><input [(ngModel)]="echeanceForm.numero" type="number" required></div>
       <div class="form-row"><label>% Facturation</label><input [(ngModel)]="echeanceForm.pourcentage" type="number" step="0.01" min="0" max="1" placeholder="0.10 = 10%"></div>
     </div>
-    <div class="form-row"><label>Objet</label><input [(ngModel)]="echeanceForm.objet" placeholder="Ex: Avance au démarrage"></div>
+    <div class="form-row"><label>Objet *</label><input [(ngModel)]="echeanceForm.objet" placeholder="Ex: Avance au démarrage" required></div>
     <div class="form-grid">
       <div class="form-row"><label>Montant prévu (DT)</label><input [(ngModel)]="echeanceForm.montantPrevu" type="number"></div>
       <div class="form-row"><label>Montant facturé (DT)</label><input [(ngModel)]="echeanceForm.montantFacture" type="number"></div>
     </div>
     <div class="form-grid">
-      <div class="form-row"><label>Date initiale</label><input [(ngModel)]="echeanceForm.dateInitiale" type="date"></div>
-      <div class="form-row"><label>Date prév. actualisée</label><input [(ngModel)]="echeanceForm.datePrevActualisee" type="date"></div>
+      <div class="form-row"><label>Date initiale</label><input [(ngModel)]="echeanceForm.dateInitiale" type="date" min="1900-01-01" max="2100-12-31"></div>
+      <div class="form-row"><label>Date prév. actualisée</label><input [(ngModel)]="echeanceForm.datePrevActualisee" type="date" min="1900-01-01" max="2100-12-31"></div>
     </div>
     <div class="form-grid">
-      <div class="form-row"><label>Date réelle</label><input [(ngModel)]="echeanceForm.dateReelle" type="date"></div>
+      <div class="form-row"><label>Date réelle</label><input [(ngModel)]="echeanceForm.dateReelle" type="date" min="1900-01-01" max="2100-12-31"></div>
       <div class="form-row">
         <label>Émise</label>
         <select [(ngModel)]="echeanceForm.emise">
@@ -1819,6 +1887,7 @@
       <label>Mois de référence</label>
       <input [(ngModel)]="kpiForm.mois"
              type="month"
+             min="1900-01" max="2100-12"
              (change)="onKpiMoisChange()">
     </div>
 
@@ -2059,7 +2128,7 @@
 
     <div class="form-row">
       <label>Date de livraison réelle</label>
-      <input [(ngModel)]="livrableForm.dateLivraisonReelle" type="date">
+      <input [(ngModel)]="livrableForm.dateLivraisonReelle" type="date" min="1900-01-01" max="2100-12-31">
     </div>
 
     <div class="form-row">
@@ -2099,7 +2168,7 @@
     <div class="form-grid">
       <div class="form-row">
         <label>Code *</label>
-        <input [(ngModel)]="risqueForm.code" placeholder="Ex: R01">
+        <input [(ngModel)]="risqueForm.code" placeholder="Ex: R01" required>
       </div>
       <div class="form-row">
         <label>Catégorie</label>
@@ -2115,7 +2184,7 @@
     <div class="form-row">
       <label>Description du risque *</label>
       <input [(ngModel)]="risqueForm.description"
-             placeholder="Ex: Retard dans la livraison des spécifications">
+             placeholder="Ex: Retard dans la livraison des spécifications" required>
     </div>
 
     <div class="modal-section-title">Évaluation</div>
@@ -2176,7 +2245,7 @@
       </div>
       <div class="form-row">
         <label>Date d'échéance</label>
-        <input [(ngModel)]="risqueForm.dateEcheance" type="date">
+        <input [(ngModel)]="risqueForm.dateEcheance" type="date" min="1900-01-01" max="2100-12-31">
       </div>
     </div>
 
@@ -2200,7 +2269,7 @@
     <div class="form-grid">
       <div class="form-row">
         <label>Code *</label>
-        <input [(ngModel)]="actionForm.code" placeholder="Ex: A01">
+        <input [(ngModel)]="actionForm.code" placeholder="Ex: A01" required>
       </div>
       <div class="form-row">
         <label>Type d'action</label>
@@ -2213,7 +2282,7 @@
     <div class="form-row">
       <label>Description *</label>
       <input [(ngModel)]="actionForm.description"
-             placeholder="Ex: Mettre en place des réunions de suivi hebdomadaires">
+             placeholder="Ex: Mettre en place des réunions de suivi hebdomadaires" required>
     </div>
 
     <div class="modal-section-title">Responsabilité</div>
@@ -2238,11 +2307,11 @@
     <div class="form-grid">
       <div class="form-row">
         <label>Date prévue</label>
-        <input [(ngModel)]="actionForm.datePrevue" type="date">
+        <input [(ngModel)]="actionForm.datePrevue" type="date" min="1900-01-01" max="2100-12-31">
       </div>
       <div class="form-row">
         <label>Date réelle</label>
-        <input [(ngModel)]="actionForm.dateReelle" type="date">
+        <input [(ngModel)]="actionForm.dateReelle" type="date" min="1900-01-01" max="2100-12-31">
       </div>
     </div>
     <div class="form-row">

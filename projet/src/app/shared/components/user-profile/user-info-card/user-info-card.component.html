@@ -6,9 +6,14 @@
 
       <!-- Avatar + nom + profils -->
       <div class="flex items-center gap-4 mb-6">
-        <div class="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-xl font-bold shadow-md flex-shrink-0">
-        {{ user.nom ? user.nom[0].toUpperCase() : '' }}{{ user.prenom ? user.prenom[0].toUpperCase() : '' }}
-        </div>
+        <label class="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-xl font-bold shadow-md flex-shrink-0 cursor-pointer overflow-hidden group">
+          <img *ngIf="user.photoUrl" [src]="photoUrl()" class="w-full h-full object-cover" alt="Photo de profil" />
+          <span *ngIf="!user.photoUrl">{{ user.nom ? user.nom[0].toUpperCase() : '' }}{{ user.prenom ? user.prenom[0].toUpperCase() : '' }}</span>
+          <span class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-xs">
+            {{ uploadingPhoto ? '...' : 'Changer' }}
+          </span>
+          <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" [disabled]="uploadingPhoto" (change)="onPhotoSelected($event)" />
+        </label>
         <div>
           <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
             {{ user.nom }} {{ user.prenom }}
@@ -21,6 +26,8 @@
           </div>
         </div>
       </div>
+
+      <p *ngIf="photoErrorMsg" class="text-sm text-red-600 font-medium -mt-4 mb-4">{{ photoErrorMsg }}</p>
 
       <!-- Grille d'infos -->
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
@@ -109,8 +116,9 @@
 
       <!-- Header modal -->
       <div class="flex items-center gap-4 px-2 pr-14 mb-6">
-        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-base font-bold flex-shrink-0">
-     {{ user.nom ? user.nom[0].toUpperCase() : '' }}{{ user.prenom ? user.prenom[0].toUpperCase() : '' }}
+        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-base font-bold flex-shrink-0 overflow-hidden">
+          <img *ngIf="user.photoUrl" [src]="photoUrl()" class="w-full h-full object-cover" alt="Photo de profil" />
+          <span *ngIf="!user.photoUrl">{{ user.nom ? user.nom[0].toUpperCase() : '' }}{{ user.prenom ? user.prenom[0].toUpperCase() : '' }}</span>
         </div>
         <div>
           <h4 class="text-xl font-semibold text-gray-800 dark:text-white/90">Modifier le profil</h4>
@@ -178,11 +186,8 @@
 
         <!-- Boutons -->
         <div class="flex items-center gap-3 px-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 lg:justify-end">
-          <div *ngIf="saveSuccess" class="flex items-center gap-1.5 text-sm text-green-600 font-medium mr-auto">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            Profil mis à jour !
+          <div *ngIf="errorMsg" class="flex items-center gap-1.5 text-sm text-red-600 font-medium mr-auto">
+            {{ errorMsg }}
           </div>
           <app-button size="sm" variant="outline" (btnClick)="closeModal()">Annuler</app-button>
           <app-button size="sm" type="submit">
@@ -193,4 +198,11 @@
       </form>
     </div>
   </app-modal>
+
+  <!-- Toast -->
+  <div *ngIf="toast.visible"
+       class="fixed bottom-6 right-6 z-[100000] px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg"
+       [ngClass]="toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'">
+    {{ toast.message }}
+  </div>
 </div>

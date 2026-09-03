@@ -138,11 +138,10 @@ export const routes: Routes = [
       { path: 'mes-charges/:id',    component: MesChargesComponent,   title: 'Mes Charges' },
       { path: 'nomenclatures',      component: NomenclatureComponent, title: 'Nomenclatures' },
       { path: 'nomenclatures/:tab', component: NomenclatureComponent, title: 'Nomenclatures' },
-      //{ path: 'assistant-ia', component: IaChatComponent, title: 'Assistant IA' },
       {
   path: 'assistant-ia',
-  loadComponent: () => import('./shared/components/ia-chat/ia-chat.component').then(m => m.IaChatComponent)
-  
+  loadComponent: () => import('./shared/components/ia-chat/ia-chat.component').then(m => m.IaChatComponent),
+  title: 'Assistant IA'
 }
      
     ]

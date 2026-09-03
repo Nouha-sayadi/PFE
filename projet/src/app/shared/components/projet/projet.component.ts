@@ -143,7 +143,19 @@ get partenaireObligatoireEdit(): boolean {
   // ── CREATE ──
   openCreate() { this.createForm = this.emptyForm(); this.showCreateModal = true; }
 
+  private validateProjetForm(f: any): string | null {
+    if (!f.titre || !f.titre.trim()) return 'Le titre est obligatoire';
+    if (f.tauxAvancement != null && (f.tauxAvancement < 0 || f.tauxAvancement > 100)) return 'L\'avancement doit être compris entre 0 et 100';
+    if (f.budgetInitial != null && f.budgetInitial < 0) return 'Le budget initial doit être positif ou nul';
+    return null;
+  }
+
   submitCreate() {
+  const error = this.validateProjetForm(this.createForm);
+  if (error) {
+    this.showToast(error, 'error');
+    return;
+  }
 
   const payload: any = {
     titre: this.createForm.titre,
@@ -204,6 +216,11 @@ console.log(JSON.stringify(payload, null, 2));
 
   submitEdit() {
     const f = this.editForm;
+    const error = this.validateProjetForm(f);
+    if (error) {
+      this.showToast(error, 'error');
+      return;
+    }
     const payload: any = {
       titre:           f.titre,
       description:     f.description,

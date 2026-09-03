@@ -124,7 +124,7 @@
       <div class="modal-section-title">Informations générales</div>
       <div class="form-row">
         <label>Titre *</label>
-        <input [(ngModel)]="createForm.titre" placeholder="Nom du projet">
+        <input [(ngModel)]="createForm.titre" placeholder="Nom du projet" required maxlength="255">
       </div>
       <div class="form-row">
         <label>Description</label>
@@ -149,12 +149,12 @@
         </div>
         <div class="form-row">
           <label>Date démarrage</label>
-          <input [(ngModel)]="createForm.dateDemarrage" type="date">
+          <input [(ngModel)]="createForm.dateDemarrage" type="date" min="1900-01-01" max="2100-12-31">
         </div>
       </div>
       <div class="form-row">
         <label>Date fin prévue</label>
-        <input [(ngModel)]="createForm.dateFinPrevu" type="date">
+        <input [(ngModel)]="createForm.dateFinPrevu" type="date" min="1900-01-01" max="2100-12-31">
       </div>
 
       <!-- ✅ Nomenclatures -->
@@ -226,7 +226,7 @@
       <h2>Modifier le projet</h2>
 
       <div class="modal-section-title">Informations générales</div>
-      <div class="form-row"><label>Titre</label><input [(ngModel)]="editForm.titre"></div>
+      <div class="form-row"><label>Titre *</label><input [(ngModel)]="editForm.titre" required maxlength="255"></div>
       <div class="form-row"><label>Description</label><textarea [(ngModel)]="editForm.description" rows="3"></textarea></div>
       <div class="form-grid">
         <div class="form-row">
@@ -247,12 +247,12 @@
         </div>
         <div class="form-row">
           <label>Date démarrage</label>
-          <input [(ngModel)]="editForm.dateDemarrage" type="date">
+          <input [(ngModel)]="editForm.dateDemarrage" type="date" min="1900-01-01" max="2100-12-31">
         </div>
       </div>
       <div class="form-row">
         <label>Date fin prévue</label>
-        <input [(ngModel)]="editForm.dateFinPrevu" type="date">
+        <input [(ngModel)]="editForm.dateFinPrevu" type="date" min="1900-01-01" max="2100-12-31">
       </div>
 
       <div class="modal-section-title">Références</div>
