@@ -1,31 +1,24 @@
 
 
-# Variable globale : l'image Docker utilisée pour les stages
 image: docker:24.0.0
 
-# Services disponibles globalement (Docker in Docker)
 services:
   - docker:24.0.0-dind
 
 
 stages:
-  - build       # Compilation Maven (backend) + npm (frontend)
-  - test        # Tests unitaires
-  - docker      # Création des images Docker
-  - deploy      # Déploiement (optionnel pour PFE)
+  - build      
+  - test        
+  - docker      
+  - deploy      
 
 
 variables:
-  # Registry Docker GitLab privé
   DOCKER_REGISTRY: "gitlab.hacloud.fr"
-  # Namespace du repo
   DOCKER_NAMESPACE: "snouha"
-  # Nom du projet
   DOCKER_PROJECT: "pfe"
-  # Images personnalisées
   DOCKER_IMAGE_BACKEND: "${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/${DOCKER_PROJECT}/backend"
   DOCKER_IMAGE_FRONTEND: "${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/${DOCKER_PROJECT}/frontend"
-  # Cache Maven
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
 
 
@@ -33,78 +26,55 @@ variables:
 # 📌 Job 1.1 : Build Backend (Maven)
 build:backend:
   stage: build
-  # Image avec Maven et JDK préinstallés
   image: maven:3.9-eclipse-temurin-17
   script:
-    # Affiche la version de Java et Maven
     - echo "🔨 Compilation Backend avec Maven..."
     - java -version
     - mvn -version
-    
-    # Entre dans le dossier backend
     - cd st2i
-    
-    # Compile et crée le JAR (sans tests pour cette étape)
     - mvn clean package -DskipTests -X
-    
-    # Affiche le résultat
     - echo "✅ Backend compilé avec succès"
     - ls -la target/*.jar
   
-  # Cache Maven pour accélérer les builds suivants
   cache:
     paths:
       - .m2/repository
       - st2i/target
   
-  # Artifacts : garde le JAR pour les jobs suivants
   artifacts:
     paths:
       - st2i/target/*.jar
     expire_in: 1 hour
   
-  # Retry si erreur réseau
   retry:
     max: 2
     when:
       - runner_system_failure
   
-  # Tag du runner (utilise celui disponible)
   tags:
     - docker
 
 # 📌 Job 1.2 : Build Frontend (npm/Angular)
 build:frontend:
   stage: build
-  # Image Node.js avec npm
   image: node:20-alpine
   script:
     - echo "🔨 Compilation Frontend avec Angular..."
     - node --version
     - npm --version
-    
-    # Entre dans le dossier frontend
     - cd projet
-    
-    # Installe les dépendances npm
     - echo "📥 Installation des dépendances..."
     - npm ci --prefer-offline --no-audit
-    
-    # Compile en production
     - echo "🔨 Build de production..."
     - npm run build -- --configuration production
-    
-    # Affiche le résultat
     - echo "✅ Frontend compilé avec succès"
     - ls -la dist/
   
-  # Cache npm pour accélérer les builds
   cache:
     paths:
       - projet/node_modules
       - projet/.angular
   
-  # Artifacts : garde la dist/ pour les jobs suivants
   artifacts:
     paths:
       - projet/dist
@@ -122,22 +92,16 @@ test:backend:
   dependencies:
     - build:backend
   script:
-    - echo "🧪 Tests Backend..."
+    - echo " Tests Backend..."
     - cd st2i
-    
-    # Lance les tests avec Maven
     - mvn test
-    
-    # Génère un rapport JUnit
     - mvn jacoco:report
-    
-    - echo "✅ Tests Backend terminés"
+    - echo " Tests Backend terminés"
   
   cache:
     paths:
       - .m2/repository
   
-  # Rapporte les résultats de test à GitLab
   artifacts:
     when: always
     reports:
@@ -146,7 +110,6 @@ test:backend:
       - st2i/target/site/jacoco/index.html
     expire_in: 30 days
   
-  # Optionnel : permet au pipeline de continuer même si les tests échouent
   allow_failure: false
   
   tags:
@@ -159,13 +122,10 @@ test:frontend:
   dependencies:
     - build:frontend
   script:
-    - echo "🧪 Tests Frontend..."
+    - echo " Tests Frontend..."
     - cd projet
-    
-    # Lance les tests Angular (headless)
     - npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
-    
-    - echo "✅ Tests Frontend terminés"
+    - echo " Tests Frontend terminés"
   
   cache:
     paths:
@@ -198,22 +158,15 @@ docker:build:backend:
     # Login au registry GitLab privé
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $DOCKER_REGISTRY
   script:
-    - echo "🐳 Construction image Docker Backend..."
-    
-    # Build l'image Docker du backend
-    # Tag avec commit SHA pour versioning
+    - echo " Construction image Docker Backend..."
     - docker build -t ${DOCKER_IMAGE_BACKEND}:${CI_COMMIT_SHA} st2i/
     - docker build -t ${DOCKER_IMAGE_BACKEND}:latest st2i/
-    
-    # Push vers registry
-    - echo "📤 Push vers registry GitLab..."
+    - echo " Push vers registry GitLab..."
     - docker push ${DOCKER_IMAGE_BACKEND}:${CI_COMMIT_SHA}
     - docker push ${DOCKER_IMAGE_BACKEND}:latest
-    
-    - echo "✅ Image Backend pushée"
+    - echo " Image Backend pushée"
   
   after_script:
-    # Logout du registry
     - docker logout $DOCKER_REGISTRY
   
   only:
@@ -234,19 +187,13 @@ docker:build:frontend:
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $DOCKER_REGISTRY
   script:
-    - echo "🐳 Construction image Docker Frontend..."
-    
-    # Build l'image Docker du frontend
+    - echo " Construction image Docker Frontend..."
     - docker build -t ${DOCKER_IMAGE_FRONTEND}:${CI_COMMIT_SHA} projet/
     - docker build -t ${DOCKER_IMAGE_FRONTEND}:latest projet/
-    
-    # Push vers registry
-    - echo "📤 Push vers registry GitLab..."
+    - echo "Push vers registry GitLab..."
     - docker push ${DOCKER_IMAGE_FRONTEND}:${CI_COMMIT_SHA}
     - docker push ${DOCKER_IMAGE_FRONTEND}:latest
-    
-    - echo "✅ Image Frontend pushée"
-  
+    - echo " Image Frontend pushée"
   after_script:
     - docker logout $DOCKER_REGISTRY
   
@@ -265,18 +212,11 @@ deploy:local:
   services:
     - docker:24.0.0-dind
   script:
-    - echo "🚀 Déploiement Local avec docker-compose..."
-    
-    # Installe docker-compose
+    - echo "Déploiement Local avec docker-compose..."
     - apk add docker-compose python3
-    
-    # Lance les conteneurs
     - docker-compose up -d
-    
-    # Affiche l'état des conteneurs
     - docker-compose ps
-    
-    - echo "✅ Application déployée"
+    - echo "Application déployée"
     - echo "Backend : http://localhost:8080"
     - echo "Frontend : http://localhost:80"
     - echo "Keycloak : http://localhost:8080/auth"
